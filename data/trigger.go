@@ -68,3 +68,36 @@ func (store Manager) AddTrigger(name, description, gpiopin string, webhooks []We
 	//	Return our data:
 	return retval, nil
 }
+
+// GetTrigger gets information about a single trigger in the system based on its id
+func (store Manager) GetTrigger(id string) (Trigger, error) {
+	//	Our return item
+	retval := Trigger{}
+
+	//	Find the item:
+	err := store.systemdb.View(func(tx *buntdb.Tx) error {
+
+		val, err := tx.Get(GetKey("Trigger", id))
+		if err != nil {
+			return err
+		}
+
+		if len(val) > 0 {
+			//	Unmarshal data into our item
+			if err := json.Unmarshal([]byte(val), &retval); err != nil {
+				return err
+			}
+		}
+
+		//	If we get to this point and there is no error...
+		return nil
+	})
+
+	//	If there was an error, report it:
+	if err != nil {
+		return retval, fmt.Errorf("problem getting the trigger: %s", err)
+	}
+
+	//	Return our data:
+	return retval, nil
+}
