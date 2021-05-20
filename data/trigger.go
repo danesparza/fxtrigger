@@ -141,3 +141,21 @@ func (store Manager) GetAllTriggers() ([]Trigger, error) {
 	//	Return our data:
 	return retval, nil
 }
+
+// DeleteTrigger deletes a trigger from the system
+func (store Manager) DeleteTrigger(id string) error {
+
+	//	Remove it from the database:
+	err := store.systemdb.Update(func(tx *buntdb.Tx) error {
+		_, err := tx.Delete(GetKey("Trigger", id))
+		return err
+	})
+
+	//	If there was an error removing the data, report it:
+	if err != nil {
+		return fmt.Errorf("problem removing the trigger: %s", err)
+	}
+
+	//	Return our data:
+	return nil
+}
