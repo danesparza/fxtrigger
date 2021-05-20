@@ -1,0 +1,12 @@
+[Unit]
+Description=fxtrigger service
+
+[Service]
+User=root
+Group=root
+ExecStart=/usr/bin/fxtrigger start --config=/etc/fxtrigger/config.yaml
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+server:
+  port: 3020
+  allowed-origins: "*"
+datastore:
+  system: /var/lib/fxtrigger/db/system.db
+  retentiondays: 30

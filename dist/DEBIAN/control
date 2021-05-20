@@ -1,0 +1,7 @@
+Package: fxtrigger
+Version: 1.0.{build}
+Architecture: armhf
+Maintainer: Dan Esparza <esparza.dan@gmail.com>
+Installed-Size: 4500
+Homepage: https://github.com/danesparza/fxtrigger
+Description: REST based management for GPIO/Sensor -> endpoint triggers
