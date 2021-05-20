@@ -101,3 +101,43 @@ func (store Manager) GetTrigger(id string) (Trigger, error) {
 	//	Return our data:
 	return retval, nil
 }
+
+// GetAllTriggers gets all triggers in the system
+func (store Manager) GetAllTriggers() ([]Trigger, error) {
+	//	Our return item
+	retval := []Trigger{}
+
+	//	Set our prefix
+	prefix := GetKey("Trigger")
+
+	//	Iterate over our values:
+	err := store.systemdb.View(func(tx *buntdb.Tx) error {
+		tx.Descend(prefix, func(key, val string) bool {
+
+			if len(val) > 0 {
+				//	Create our item:
+				item := Trigger{}
+
+				//	Unmarshal data into our item
+				bval := []byte(val)
+				if err := json.Unmarshal(bval, &item); err != nil {
+					return false
+				}
+
+				//	Add to the array of returned users:
+				retval = append(retval, item)
+			}
+
+			return true
+		})
+		return nil
+	})
+
+	//	If there was an error, report it:
+	if err != nil {
+		return retval, fmt.Errorf("problem getting the list of triggers: %s", err)
+	}
+
+	//	Return our data:
+	return retval, nil
+}
