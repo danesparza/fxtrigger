@@ -138,7 +138,7 @@ func TestTrigger_DeleteTrigger_ValidTriggers_Successful(t *testing.T) {
 	db.AddTrigger(testTrigger3.Name, testTrigger3.Description, testTrigger3.GPIOPin, testTrigger3.WebHooks, testTrigger3.MinimumSleepBeforeRetrigger)
 	err = db.DeleteTrigger(newTrigger2.ID) //	Delete the 2nd trigger
 
-	gotTriggers, err := db.GetAllTriggers()
+	gotTriggers, _ := db.GetAllTriggers()
 
 	//	Assert
 	if err != nil {
