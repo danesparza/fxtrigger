@@ -7,7 +7,7 @@ import (
 	"github.com/danesparza/fxtrigger/data"
 )
 
-func TestFile_AddFile_ValidFile_Successful(t *testing.T) {
+func TestTrigger_AddTrigger_ValidTrigger_Successful(t *testing.T) {
 
 	//	Arrange
 	systemdb := getTestFiles()
@@ -37,7 +37,7 @@ func TestFile_AddFile_ValidFile_Successful(t *testing.T) {
 
 }
 
-func TestFile_GetTrigger_ValidTrigger_Successful(t *testing.T) {
+func TestTrigger_GetTrigger_ValidTrigger_Successful(t *testing.T) {
 
 	//	Arrange
 	systemdb := getTestFiles()
@@ -73,4 +73,84 @@ func TestFile_GetTrigger_ValidTrigger_Successful(t *testing.T) {
 	if len(gotTrigger.ID) < 2 {
 		t.Errorf("GetTrigger failed: Should get valid id but got: %v", gotTrigger.ID)
 	}
+}
+
+func TestTrigger_GetAllTriggers_ValidTriggers_Successful(t *testing.T) {
+
+	//	Arrange
+	systemdb := getTestFiles()
+
+	db, err := data.NewManager(systemdb)
+	if err != nil {
+		t.Fatalf("NewManager failed: %s", err)
+	}
+	defer func() {
+		db.Close()
+		os.RemoveAll(systemdb)
+	}()
+
+	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: "11"}
+	testTrigger2 := data.Trigger{Name: "Trigger 2", Description: "Unit test 2", GPIOPin: "12"}
+	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: "13"}
+
+	//	Act
+	db.AddTrigger(testTrigger1.Name, testTrigger1.Description, testTrigger1.GPIOPin, testTrigger1.WebHooks, testTrigger1.MinimumSleepBeforeRetrigger)
+	newTrigger2, _ := db.AddTrigger(testTrigger2.Name, testTrigger2.Description, testTrigger2.GPIOPin, testTrigger2.WebHooks, testTrigger2.MinimumSleepBeforeRetrigger)
+	db.AddTrigger(testTrigger3.Name, testTrigger3.Description, testTrigger3.GPIOPin, testTrigger3.WebHooks, testTrigger3.MinimumSleepBeforeRetrigger)
+
+	gotTriggers, err := db.GetAllTriggers()
+
+	//	Assert
+	if err != nil {
+		t.Errorf("GetAllTriggers - Should get all triggers without error, but got: %s", err)
+	}
+
+	if len(gotTriggers) < 2 {
+		t.Errorf("GetAllTriggers failed: Should get all items but got: %v", len(gotTriggers))
+	}
+
+	if gotTriggers[1].Description != newTrigger2.Description {
+		t.Errorf("GetAllTriggers failed: Should get an item with the correct details: %+v", gotTriggers[1])
+	}
+}
+
+func TestTrigger_DeleteTrigger_ValidTriggers_Successful(t *testing.T) {
+
+	//	Arrange
+	systemdb := getTestFiles()
+
+	db, err := data.NewManager(systemdb)
+	if err != nil {
+		t.Fatalf("NewManager failed: %s", err)
+	}
+	defer func() {
+		db.Close()
+		os.RemoveAll(systemdb)
+	}()
+
+	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: "11"}
+	testTrigger2 := data.Trigger{Name: "Trigger 2", Description: "Unit test 2", GPIOPin: "12"}
+	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: "13"}
+
+	//	Act
+	db.AddTrigger(testTrigger1.Name, testTrigger1.Description, testTrigger1.GPIOPin, testTrigger1.WebHooks, testTrigger1.MinimumSleepBeforeRetrigger)
+	newTrigger2, _ := db.AddTrigger(testTrigger2.Name, testTrigger2.Description, testTrigger2.GPIOPin, testTrigger2.WebHooks, testTrigger2.MinimumSleepBeforeRetrigger)
+	db.AddTrigger(testTrigger3.Name, testTrigger3.Description, testTrigger3.GPIOPin, testTrigger3.WebHooks, testTrigger3.MinimumSleepBeforeRetrigger)
+	err = db.DeleteTrigger(newTrigger2.ID) //	Delete the 2nd trigger
+
+	gotTriggers, err := db.GetAllTriggers()
+
+	//	Assert
+	if err != nil {
+		t.Errorf("DeleteTrigger - Should delete trigger without error, but got: %s", err)
+	}
+
+	if len(gotTriggers) != 2 {
+		t.Errorf("DeleteTrigger failed: Should remove an item but got: %v", len(gotTriggers))
+	}
+
+	if gotTriggers[1].Description == newTrigger2.Description {
+		t.Errorf("DeleteTrigger failed: Should get an item with different details than the removed item but got: %+v", gotTriggers[1])
+	}
+
 }
