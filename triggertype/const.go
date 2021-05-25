@@ -1,8 +1,11 @@
 package triggertype
 
 const (
-	// Audio is for audio files
+	// Motion is for motion sensors
 	Motion = "Motion"
+
+	// Button is for button triggers
+	Button = "Button"
 
 	// Time is for time based triggers
 	Time = "Time"
