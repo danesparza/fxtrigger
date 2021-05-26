@@ -12,7 +12,8 @@ import (
 // Trigger represents sensor/button trigger information.
 type Trigger struct {
 	ID                          string    `json:"id"`                          // Unique Trigger ID
-	Created                     time.Time `json:"created"`                     // File create time
+	Enabled                     bool      `json:"enabled"`                     // Trigger enabled or not
+	Created                     time.Time `json:"created"`                     // Trigger create time
 	Name                        string    `json:"name"`                        // The trigger name
 	Description                 string    `json:"description"`                 // Additional information about the trigger
 	GPIOPin                     string    `json:"gpiopin"`                     // The GPIO pin the sensor or button is on
