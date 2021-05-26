@@ -16,36 +16,176 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
 
+	"github.com/danesparza/fxtrigger/api"
+	"github.com/danesparza/fxtrigger/data"
+	"github.com/danesparza/fxtrigger/event"
+	"github.com/danesparza/fxtrigger/trigger"
+	"github.com/danesparza/fxtrigger/triggertype"
+	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Start the API and UI services",
+	Long:  `Start the API and UI services`,
+	Run:   start,
+}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("start called")
-	},
+func start(cmd *cobra.Command, args []string) {
+
+	//	If we have a config file, report it:
+	if viper.ConfigFileUsed() != "" {
+		log.Println("[DEBUG] Using config file:", viper.ConfigFileUsed())
+	} else {
+		log.Println("[DEBUG] No config file found.")
+	}
+
+	retentiondays := viper.GetString("datastore.retentiondays")
+	systemdb := viper.GetString("datastore.system")
+	dndschedule := viper.GetString("trigger.dndschedule")
+	dndstarttime := viper.GetString("trigger.dndstart")
+	dndendtime := viper.GetString("trigger.dndend")
+
+	//	Emit what we know:
+	log.Printf("[INFO] ************* CONFIG *************\n")
+	log.Printf("[INFO] System DB: %s\n", systemdb)
+	log.Printf("[INFO] History retention: %s days\n", retentiondays)
+	log.Printf("[INFO] Use Do not Disturb schedule? %s\n", dndschedule)
+	log.Printf("[INFO] Do not disturb start time: %s bytes\n", dndstarttime)
+	log.Printf("[INFO] Do not disturb end time: %s bytes\n", dndendtime)
+	log.Printf("[INFO] **************************\n")
+
+	//	Log the log retention (in days):
+	historyttl, err := strconv.Atoi(retentiondays)
+	if err != nil {
+		log.Fatalf("[ERROR] The datastore.retentiondays config is invalid: %s", err)
+	}
+
+	//	Create a DBManager object and associate with the api.Service
+	db, err := data.NewManager(systemdb)
+	if err != nil {
+		log.Printf("[ERROR] Error trying to open the system database: %s", err)
+		return
+	}
+	defer db.Close()
+
+	//	Create an api service object
+	apiService := api.Service{
+		FireTrigger: make(chan data.Trigger),
+		DB:          db,
+		StartTime:   time.Now(),
+		HistoryTTL:  time.Duration(int(historyttl)*24) * time.Hour,
+	}
+
+	//	Trap program exit appropriately
+	ctx, cancel := context.WithCancel(context.Background())
+	sigs := make(chan os.Signal, 2)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+	go handleSignals(ctx, sigs, cancel, db, apiService.HistoryTTL)
+
+	//	Log that the system has started:
+	_, err = db.AddEvent(event.SystemStartup, triggertype.System, "System started", "", apiService.HistoryTTL)
+	if err != nil {
+		log.Fatalf("[ERROR] Error trying to log to the system datastore: %s", err)
+		return
+	}
+
+	//	Create a router and setup our REST endpoints...
+	restRouter := mux.NewRouter()
+
+	//	UI ROUTES
+	if viper.GetString("server.ui-dir") == "" {
+		//	Use the static assets file generated with
+		//	https://github.com/elazarl/go-bindata-assetfs using the application-monitor-ui from
+		//	https://github.com/danesparza/application-monitor-ui.
+		//
+		//	To generate this file, run `yarn build` under the "navajo-plex-ui" project.
+		//	Then rename the 'build' directory to 'ui', place that
+		//	directory under the main navajo-plex directory and run the commands:
+		//	go-bindata-assetfs -pkg cmd -o .\cmd\bindata.go ./ui/...
+		//	go install ./...
+
+		//  UIRouter.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(assetFS())))
+	} else {
+		//	Use the supplied directory:
+		log.Printf("[INFO] Using UI directory: %s\n", viper.GetString("server.ui-dir"))
+		restRouter.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir(viper.GetString("server.ui-dir")))))
+	}
+
+	//	AUDIO ROUTES
+	restRouter.HandleFunc("/v1/triggers", apiService.ListAllTriggers).Methods("PUT")         // Create a trigger
+	restRouter.HandleFunc("/v1/triggers", apiService.ListAllTriggers).Methods("GET")         // List all triggers
+	restRouter.HandleFunc("/v1/triggers/{id}", apiService.ListAllTriggers).Methods("DELETE") // Delete a trigger
+
+	restRouter.HandleFunc("/v1/trigger/fire/{id}", apiService.ListAllTriggers).Methods("POST") // Fire a trigger
+
+	//	EVENT ROUTES
+	restRouter.HandleFunc("/v1/events", apiService.GetAllEvents).Methods("GET") // List all events
+	restRouter.HandleFunc("/v1/event/{id}", apiService.GetEvent).Methods("GET") // Get a specific log event
+
+	//	SWAGGER ROUTES
+	restRouter.PathPrefix("/v1/swagger").Handler(httpSwagger.WrapHandler)
+
+	//	Start the media processor:
+	go trigger.HandleAndProcess(ctx, apiService.FireTrigger)
+
+	//	Setup the CORS options:
+	log.Printf("[INFO] Allowed CORS origins: %s\n", viper.GetString("server.allowed-origins"))
+
+	uiCorsRouter := cors.New(cors.Options{
+		AllowedOrigins:   strings.Split(viper.GetString("server.allowed-origins"), ","),
+		AllowCredentials: true,
+	}).Handler(restRouter)
+
+	//	Format the bound interface:
+	formattedServerInterface := viper.GetString("server.bind")
+	if formattedServerInterface == "" {
+		formattedServerInterface = GetOutboundIP().String()
+	}
+
+	//	Start the service and display how to access it
+	log.Printf("[INFO] REST service documentation: http://%s:%s/v1/swagger/\n", formattedServerInterface, viper.GetString("server.port"))
+	log.Printf("[ERROR] %v\n", http.ListenAndServe(viper.GetString("server.bind")+":"+viper.GetString("server.port"), uiCorsRouter))
+}
+
+func handleSignals(ctx context.Context, sigs <-chan os.Signal, cancel context.CancelFunc, db *data.Manager, historyttl time.Duration) {
+	select {
+	case <-ctx.Done():
+	case sig := <-sigs:
+		switch sig {
+		case os.Interrupt:
+			log.Println("[INFO] SIGINT")
+		case syscall.SIGTERM:
+			log.Println("[INFO] SIGTERM")
+		}
+
+		//	Log that the system has started:
+		_, err := db.AddEvent(event.SystemShutdown, triggertype.System, "System stopping", "", historyttl)
+		if err != nil {
+			log.Printf("[ERROR] Error trying to log to the system datastore: %s", err)
+		}
+
+		log.Println("[INFO] Shutting down ...")
+		cancel()
+		os.Exit(0)
+	}
 }
 
 func init() {
 	rootCmd.AddCommand(startCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// startCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

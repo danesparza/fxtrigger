@@ -74,6 +74,9 @@ func initConfig() {
 	viper.SetDefault("loglevel", "INFO")
 	viper.SetDefault("datastore.system", path.Join(home, "fxtrigger", "db", "system.db"))
 	viper.SetDefault("datastore.retentiondays", 30)
+	viper.SetDefault("trigger.dndschedule", false) //	Use a 'Do not disturb' schedule
+	viper.SetDefault("trigger.dndstart", "8:00pm") //	Do not disturb scheduled start time
+	viper.SetDefault("trigger.dndend", "6:00am")   //	Do not disturb scheduled end time
 	viper.SetDefault("server.port", 3020)
 	viper.SetDefault("server.allowed-origins", "*")
 
