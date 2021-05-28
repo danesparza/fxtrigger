@@ -1,0 +1,228 @@
+basePath: /v1
+definitions:
+  api.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  api.SystemResponse:
+    properties:
+      data:
+        type: object
+      message:
+        type: string
+    type: object
+  data.Trigger:
+    properties:
+      created:
+        description: Trigger create time
+        type: string
+      description:
+        description: Additional information about the trigger
+        type: string
+      enabled:
+        description: Trigger enabled or not
+        type: boolean
+      gpiopin:
+        description: The GPIO pin the sensor or button is on
+        type: string
+      id:
+        description: Unique Trigger ID
+        type: string
+      minimumsecondsbeforeretrigger:
+        description: Minimum time (in seconds) before a retrigger
+        type: integer
+      name:
+        description: The trigger name
+        type: string
+      webhooks:
+        description: The webhooks to send when triggered
+        items:
+          $ref: '#/definitions/data.WebHook'
+        type: array
+    type: object
+  data.WebHook:
+    properties:
+      contenttype:
+        description: The requested content type of the response (usually application/json)
+        type: string
+      httpbody:
+        description: The HTTP body to send.  This can be empty
+        items:
+          type: integer
+        type: array
+      httpheaders:
+        description: The HTTP headers to send
+        type: string
+      httpverb:
+        description: HTTP verb (GET/PUT/POST/DELETE/etc)
+        type: string
+      url:
+        description: The URL to connect to
+        type: string
+    type: object
+info:
+  contact: {}
+  description: fxTrigger REST based management for GPIO/Sensor -> endpoint triggers
+    (on Raspberry Pi)
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: fxTrigger
+  version: "1.0"
+paths:
+  /audio/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a trigger in the system
+      parameters:
+      - description: The trigger id to delete
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SystemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Deletes a trigger in the system
+      tags:
+      - triggers
+  /event/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Gets a log event.
+      parameters:
+      - description: The event id to get
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SystemResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Gets a log event.
+      tags:
+      - events
+  /events:
+    get:
+      consumes:
+      - application/json
+      description: Gets all events in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SystemResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Gets all events in the system
+      tags:
+      - events
+  /triggers:
+    get:
+      consumes:
+      - application/json
+      description: List all triggers in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SystemResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List all triggers in the system
+      tags:
+      - triggers
+    post:
+      consumes:
+      - application/json
+      description: Create a new trigger
+      parameters:
+      - description: The trigger to create
+        in: body
+        name: trigger
+        required: true
+        schema:
+          $ref: '#/definitions/data.Trigger'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SystemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a new trigger
+      tags:
+      - triggers
+    put:
+      consumes:
+      - application/json
+      description: Update a trigger
+      parameters:
+      - description: The trigger to update.  Must include trigger.id
+        in: body
+        name: trigger
+        required: true
+        schema:
+          $ref: '#/definitions/data.Trigger'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SystemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Update a trigger
+      tags:
+      - triggers
+swagger: "2.0"
