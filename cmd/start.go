@@ -128,10 +128,10 @@ func start(cmd *cobra.Command, args []string) {
 	}
 
 	//	AUDIO ROUTES
-	restRouter.HandleFunc("/v1/triggers", apiService.CreateTrigger).Methods("POST")          // Create a trigger
-	restRouter.HandleFunc("/v1/triggers", apiService.UpdateTrigger).Methods("PUT")           // Update a trigger
-	restRouter.HandleFunc("/v1/triggers", apiService.ListAllTriggers).Methods("GET")         // List all triggers
-	restRouter.HandleFunc("/v1/triggers/{id}", apiService.ListAllTriggers).Methods("DELETE") // Delete a trigger
+	restRouter.HandleFunc("/v1/triggers", apiService.CreateTrigger).Methods("POST")        // Create a trigger
+	restRouter.HandleFunc("/v1/triggers", apiService.UpdateTrigger).Methods("PUT")         // Update a trigger
+	restRouter.HandleFunc("/v1/triggers", apiService.ListAllTriggers).Methods("GET")       // List all triggers
+	restRouter.HandleFunc("/v1/triggers/{id}", apiService.DeleteTrigger).Methods("DELETE") // Delete a trigger
 
 	restRouter.HandleFunc("/v1/trigger/fire/{id}", apiService.ListAllTriggers).Methods("POST") // Fire a trigger
 
