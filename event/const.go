@@ -7,6 +7,9 @@ const (
 	// TriggerCreated event is when a trigger has been created
 	TriggerCreated = "Trigger created"
 
+	// TriggerUpdated event is when a trigger has been updated
+	TriggerUpdated = "Trigger updated"
+
 	// TriggerDeleted event is when a trigger has been removed
 	TriggerDeleted = "Trigger deleted"
 

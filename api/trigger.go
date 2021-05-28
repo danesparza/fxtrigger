@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/danesparza/fxtrigger/data"
 	"github.com/danesparza/fxtrigger/event"
@@ -46,7 +47,7 @@ func (service Service) ListAllTriggers(rw http.ResponseWriter, req *http.Request
 // @Tags triggers
 // @Accept  json
 // @Produce  json
-// @Param endpoint body data.Trigger true "The endpoint url to stream"
+// @Param trigger body data.Trigger true "The trigger to create"
 // @Success 200 {object} api.SystemResponse
 // @Failure 400 {object} api.ErrorResponse
 // @Failure 500 {object} api.ErrorResponse
@@ -84,6 +85,63 @@ func (service Service) CreateTrigger(rw http.ResponseWriter, req *http.Request) 
 	response := SystemResponse{
 		Message: "Trigger created",
 		Data:    newTrigger,
+	}
+
+	//	Serialize to JSON & return the response:
+	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	json.NewEncoder(rw).Encode(response)
+}
+
+// UpdateTrigger godoc
+// @Summary Update a trigger
+// @Description Update a trigger
+// @Tags triggers
+// @Accept  json
+// @Produce  json
+// @Param trigger body data.Trigger true "The trigger to update.  Must include trigger.id"
+// @Success 200 {object} api.SystemResponse
+// @Failure 400 {object} api.ErrorResponse
+// @Failure 500 {object} api.ErrorResponse
+// @Router /triggers [put]
+func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) {
+
+	//	req.Body is a ReadCloser -- we need to remember to close it:
+	defer req.Body.Close()
+
+	//	Decode the request
+	request := data.Trigger{}
+	err := json.NewDecoder(req.Body).Decode(&request)
+	if err != nil {
+		sendErrorResponse(rw, err, http.StatusBadRequest)
+		return
+	}
+
+	//	If we don't have the trigger.id, make sure we indicate that's not valid
+	if strings.TrimSpace(request.ID) == "" {
+		sendErrorResponse(rw, fmt.Errorf("the trigger.id is required"), http.StatusBadRequest)
+		return
+	}
+
+	//	If we don't have any webhooks associated, make sure we indicate that's not valid
+	if len(request.WebHooks) < 1 {
+		sendErrorResponse(rw, fmt.Errorf("at least one webhook must be included"), http.StatusBadRequest)
+		return
+	}
+
+	//	Create the new trigger:
+	updatedTrigger, err := service.DB.UpdateTrigger(request)
+	if err != nil {
+		sendErrorResponse(rw, err, http.StatusInternalServerError)
+		return
+	}
+
+	//	Record the event:
+	service.DB.AddEvent(event.TriggerUpdated, triggertype.Unknown, fmt.Sprintf("%+v", request), GetIP(req), service.HistoryTTL)
+
+	//	Create our response and send information back:
+	response := SystemResponse{
+		Message: "Trigger updated",
+		Data:    updatedTrigger,
 	}
 
 	//	Serialize to JSON & return the response:
