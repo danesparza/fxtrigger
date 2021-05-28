@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/danesparza/fxtrigger/data"
 	"github.com/danesparza/fxtrigger/event"
 	"github.com/danesparza/fxtrigger/triggertype"
 	"github.com/gorilla/mux"
@@ -48,7 +47,7 @@ func (service Service) ListAllTriggers(rw http.ResponseWriter, req *http.Request
 // @Tags triggers
 // @Accept  json
 // @Produce  json
-// @Param trigger body data.Trigger true "The trigger to create"
+// @Param trigger body api.CreateTriggerRequest true "The trigger to create"
 // @Success 200 {object} api.SystemResponse
 // @Failure 400 {object} api.ErrorResponse
 // @Failure 500 {object} api.ErrorResponse
@@ -59,7 +58,7 @@ func (service Service) CreateTrigger(rw http.ResponseWriter, req *http.Request) 
 	defer req.Body.Close()
 
 	//	Decode the request
-	request := data.Trigger{}
+	request := CreateTriggerRequest{}
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
 		sendErrorResponse(rw, err, http.StatusBadRequest)
@@ -99,7 +98,7 @@ func (service Service) CreateTrigger(rw http.ResponseWriter, req *http.Request) 
 // @Tags triggers
 // @Accept  json
 // @Produce  json
-// @Param trigger body data.Trigger true "The trigger to update.  Must include trigger.id"
+// @Param trigger body api.UpdateTriggerRequest true "The trigger to update.  Must include trigger.id"
 // @Success 200 {object} api.SystemResponse
 // @Failure 400 {object} api.ErrorResponse
 // @Failure 500 {object} api.ErrorResponse
@@ -110,7 +109,7 @@ func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) 
 	defer req.Body.Close()
 
 	//	Decode the request
-	request := data.Trigger{}
+	request := UpdateTriggerRequest{}
 	err := json.NewDecoder(req.Body).Decode(&request)
 	if err != nil {
 		sendErrorResponse(rw, err, http.StatusBadRequest)
@@ -124,8 +123,8 @@ func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) 
 	}
 
 	//	Make sure the id exists
-	gotTrigger, _ := service.DB.GetTrigger(request.ID)
-	if gotTrigger.ID != request.ID {
+	trigUpdate, _ := service.DB.GetTrigger(request.ID)
+	if trigUpdate.ID != request.ID {
 		sendErrorResponse(rw, fmt.Errorf("trigger must already exist"), http.StatusBadRequest)
 		return
 	}
@@ -136,8 +135,16 @@ func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) 
 		return
 	}
 
+	//	Update the trigger:
+	trigUpdate.Name = request.Name
+	trigUpdate.Description = request.Description
+	trigUpdate.Enabled = request.Enabled
+	trigUpdate.GPIOPin = request.GPIOPin
+	trigUpdate.MinimumSecondsBeforeRetrigger = request.MinimumSecondsBeforeRetrigger
+	trigUpdate.WebHooks = request.WebHooks
+
 	//	Create the new trigger:
-	updatedTrigger, err := service.DB.UpdateTrigger(request)
+	updatedTrigger, err := service.DB.UpdateTrigger(trigUpdate)
 	if err != nil {
 		sendErrorResponse(rw, err, http.StatusInternalServerError)
 		return

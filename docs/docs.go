@@ -192,7 +192,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/data.Trigger"
+                            "$ref": "#/definitions/api.UpdateTriggerRequest"
                         }
                     }
                 ],
@@ -236,7 +236,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/data.Trigger"
+                            "$ref": "#/definitions/api.CreateTriggerRequest"
                         }
                     }
                 ],
@@ -264,6 +264,34 @@ var doc = `{
         }
     },
     "definitions": {
+        "api.CreateTriggerRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "Additional information about the trigger",
+                    "type": "string"
+                },
+                "gpiopin": {
+                    "description": "The GPIO pin the sensor or button is on",
+                    "type": "string"
+                },
+                "minimumsecondsbeforeretrigger": {
+                    "description": "Minimum time (in seconds) before a retrigger",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "The trigger name",
+                    "type": "string"
+                },
+                "webhooks": {
+                    "description": "The webhooks to send when triggered",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.WebHook"
+                    }
+                }
+            }
+        },
         "api.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -283,13 +311,9 @@ var doc = `{
                 }
             }
         },
-        "data.Trigger": {
+        "api.UpdateTriggerRequest": {
             "type": "object",
             "properties": {
-                "created": {
-                    "description": "Trigger create time",
-                    "type": "string"
-                },
                 "description": {
                     "description": "Additional information about the trigger",
                     "type": "string"

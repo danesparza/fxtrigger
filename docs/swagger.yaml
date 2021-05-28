@@ -1,5 +1,25 @@
 basePath: /v1
 definitions:
+  api.CreateTriggerRequest:
+    properties:
+      description:
+        description: Additional information about the trigger
+        type: string
+      gpiopin:
+        description: The GPIO pin the sensor or button is on
+        type: string
+      minimumsecondsbeforeretrigger:
+        description: Minimum time (in seconds) before a retrigger
+        type: integer
+      name:
+        description: The trigger name
+        type: string
+      webhooks:
+        description: The webhooks to send when triggered
+        items:
+          $ref: '#/definitions/data.WebHook'
+        type: array
+    type: object
   api.ErrorResponse:
     properties:
       message:
@@ -12,11 +32,8 @@ definitions:
       message:
         type: string
     type: object
-  data.Trigger:
+  api.UpdateTriggerRequest:
     properties:
-      created:
-        description: Trigger create time
-        type: string
       description:
         description: Additional information about the trigger
         type: string
@@ -177,7 +194,7 @@ paths:
         name: trigger
         required: true
         schema:
-          $ref: '#/definitions/data.Trigger'
+          $ref: '#/definitions/api.CreateTriggerRequest'
       produces:
       - application/json
       responses:
@@ -206,7 +223,7 @@ paths:
         name: trigger
         required: true
         schema:
-          $ref: '#/definitions/data.Trigger'
+          $ref: '#/definitions/api.UpdateTriggerRequest'
       produces:
       - application/json
       responses:

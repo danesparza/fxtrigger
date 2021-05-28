@@ -19,6 +19,26 @@ type Service struct {
 	FireTrigger chan data.Trigger
 }
 
+// CreateTriggerRequest is a request to create a new trigger
+type CreateTriggerRequest struct {
+	Name                          string         `json:"name"`                          // The trigger name
+	Description                   string         `json:"description"`                   // Additional information about the trigger
+	GPIOPin                       string         `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
+	WebHooks                      []data.WebHook `json:"webhooks"`                      // The webhooks to send when triggered
+	MinimumSecondsBeforeRetrigger int            `json:"minimumsecondsbeforeretrigger"` // Minimum time (in seconds) before a retrigger
+}
+
+// UpdateTriggerRequest is a request to update a trigger
+type UpdateTriggerRequest struct {
+	ID                            string         `json:"id"`                            // Unique Trigger ID
+	Enabled                       bool           `json:"enabled"`                       // Trigger enabled or not
+	Name                          string         `json:"name"`                          // The trigger name
+	Description                   string         `json:"description"`                   // Additional information about the trigger
+	GPIOPin                       string         `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
+	WebHooks                      []data.WebHook `json:"webhooks"`                      // The webhooks to send when triggered
+	MinimumSecondsBeforeRetrigger int            `json:"minimumsecondsbeforeretrigger"` // Minimum time (in seconds) before a retrigger
+}
+
 // SystemResponse is a response for a system request
 type SystemResponse struct {
 	Message string      `json:"message"`
