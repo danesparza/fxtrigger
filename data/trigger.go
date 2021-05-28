@@ -11,14 +11,14 @@ import (
 
 // Trigger represents sensor/button trigger information.
 type Trigger struct {
-	ID                          string    `json:"id"`                          // Unique Trigger ID
-	Enabled                     bool      `json:"enabled"`                     // Trigger enabled or not
-	Created                     time.Time `json:"created"`                     // Trigger create time
-	Name                        string    `json:"name"`                        // The trigger name
-	Description                 string    `json:"description"`                 // Additional information about the trigger
-	GPIOPin                     string    `json:"gpiopin"`                     // The GPIO pin the sensor or button is on
-	WebHooks                    []WebHook `json:"webhooks"`                    // The webhooks to send when triggered
-	MinimumSleepBeforeRetrigger int       `json:"minimumsleepbeforeretrigger"` // Minimum sleep time (in seconds) before a retrigger
+	ID                            string    `json:"id"`                            // Unique Trigger ID
+	Enabled                       bool      `json:"enabled"`                       // Trigger enabled or not
+	Created                       time.Time `json:"created"`                       // Trigger create time
+	Name                          string    `json:"name"`                          // The trigger name
+	Description                   string    `json:"description"`                   // Additional information about the trigger
+	GPIOPin                       string    `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
+	WebHooks                      []WebHook `json:"webhooks"`                      // The webhooks to send when triggered
+	MinimumSecondsBeforeRetrigger int       `json:"minimumsecondsbeforeretrigger"` // Minimum time (in seconds) before a retrigger
 }
 
 // WebHook represents a notification message sent to an endpoint
@@ -36,25 +36,26 @@ func (store Manager) AddTrigger(name, description, gpiopin string, webhooks []We
 	//	Our return item
 	retval := Trigger{}
 
-	newFile := Trigger{
-		ID:                          xid.New().String(), // Generate a new id
-		Created:                     time.Now(),
-		Name:                        name,
-		Description:                 description,
-		GPIOPin:                     gpiopin,
-		WebHooks:                    webhooks,
-		MinimumSleepBeforeRetrigger: minimumsleep,
+	newTrigger := Trigger{
+		ID:                            xid.New().String(), // Generate a new id
+		Created:                       time.Now(),
+		Enabled:                       true,
+		Name:                          name,
+		Description:                   description,
+		GPIOPin:                       gpiopin,
+		WebHooks:                      webhooks,
+		MinimumSecondsBeforeRetrigger: minimumsleep,
 	}
 
 	//	Serialize to JSON format
-	encoded, err := json.Marshal(newFile)
+	encoded, err := json.Marshal(newTrigger)
 	if err != nil {
 		return retval, fmt.Errorf("problem serializing the data: %s", err)
 	}
 
 	//	Save it to the database:
 	err = store.systemdb.Update(func(tx *buntdb.Tx) error {
-		_, _, err := tx.Set(GetKey("Trigger", newFile.ID), string(encoded), &buntdb.SetOptions{})
+		_, _, err := tx.Set(GetKey("Trigger", newTrigger.ID), string(encoded), &buntdb.SetOptions{})
 		return err
 	})
 
@@ -64,7 +65,37 @@ func (store Manager) AddTrigger(name, description, gpiopin string, webhooks []We
 	}
 
 	//	Set our retval:
-	retval = newFile
+	retval = newTrigger
+
+	//	Return our data:
+	return retval, nil
+}
+
+// AddTrigger adds a trigger to the system
+func (store Manager) UpdateTrigger(updatedTrigger Trigger) (Trigger, error) {
+
+	//	Our return item
+	retval := Trigger{}
+
+	//	Serialize to JSON format
+	encoded, err := json.Marshal(updatedTrigger)
+	if err != nil {
+		return retval, fmt.Errorf("problem serializing the data: %s", err)
+	}
+
+	//	Save it to the database:
+	err = store.systemdb.Update(func(tx *buntdb.Tx) error {
+		_, _, err := tx.Set(GetKey("Trigger", updatedTrigger.ID), string(encoded), &buntdb.SetOptions{})
+		return err
+	})
+
+	//	If there was an error saving the data, report it:
+	if err != nil {
+		return retval, fmt.Errorf("problem saving the trigger: %s", err)
+	}
+
+	//	Set our retval:
+	retval = updatedTrigger
 
 	//	Return our data:
 	return retval, nil
