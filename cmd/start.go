@@ -15,7 +15,6 @@ import (
 	"github.com/danesparza/fxtrigger/data"
 	_ "github.com/danesparza/fxtrigger/docs" // swagger docs location
 	"github.com/danesparza/fxtrigger/event"
-	"github.com/danesparza/fxtrigger/trigger"
 	"github.com/danesparza/fxtrigger/triggertype"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -128,8 +127,10 @@ func start(cmd *cobra.Command, args []string) {
 	//	SWAGGER ROUTES
 	restRouter.PathPrefix("/v1/swagger").Handler(httpSwagger.WrapHandler)
 
-	//	Start the media processor:
-	go trigger.HandleAndProcess(ctx, apiService.FireTrigger)
+	//	Create background processes to
+	//	- listen for triggers events
+	//	- handle requests to fire a trigger:
+	// go trigger.HandleAndProcess(ctx, apiService.FireTrigger)
 
 	//	Setup the CORS options:
 	log.Printf("[INFO] Allowed CORS origins: %s\n", viper.GetString("server.allowed-origins"))
