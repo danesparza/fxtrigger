@@ -175,7 +175,7 @@ func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) 
 // @Failure 400 {object} api.ErrorResponse
 // @Failure 500 {object} api.ErrorResponse
 // @Failure 503 {object} api.ErrorResponse
-// @Router /audio/{id} [delete]
+// @Router /triggers/{id} [delete]
 func (service Service) DeleteTrigger(rw http.ResponseWriter, req *http.Request) {
 
 	//	Get the id from the url (if it's blank, return an error)
@@ -200,6 +200,52 @@ func (service Service) DeleteTrigger(rw http.ResponseWriter, req *http.Request) 
 	//	Construct our response
 	response := SystemResponse{
 		Message: "Trigger deleted",
+		Data:    vars["id"],
+	}
+
+	//	Serialize to JSON & return the response:
+	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	json.NewEncoder(rw).Encode(response)
+}
+
+// FireSingleTrigger godoc
+// @Summary Fires a trigger in the system
+// @Description Fires a trigger in the system
+// @Tags triggers
+// @Accept  json
+// @Produce  json
+// @Param id path string true "The trigger id to fire"
+// @Success 200 {object} api.SystemResponse
+// @Failure 400 {object} api.ErrorResponse
+// @Failure 500 {object} api.ErrorResponse
+// @Router /trigger/fire/{id} [post]
+func (service Service) FireSingleTrigger(rw http.ResponseWriter, req *http.Request) {
+
+	//	Get the id from the url (if it's blank, return an error)
+	vars := mux.Vars(req)
+	if vars["id"] == "" {
+		err := fmt.Errorf("requires an id of a trigger to fire")
+		sendErrorResponse(rw, err, http.StatusBadRequest)
+		return
+	}
+
+	//	Get the trigger
+	trigger, err := service.DB.GetTrigger(vars["id"])
+	if err != nil {
+		err = fmt.Errorf("error getting trigger: %v", err)
+		sendErrorResponse(rw, err, http.StatusInternalServerError)
+		return
+	}
+
+	//	Call the channel to fire the event:
+	service.FireTrigger <- trigger
+
+	//	Record the event:
+	service.DB.AddEvent(event.TriggerFired, triggertype.Unknown, vars["id"], GetIP(req), service.HistoryTTL)
+
+	//	Construct our response
+	response := SystemResponse{
+		Message: "Trigger fired",
 		Data:    vars["id"],
 	}
 

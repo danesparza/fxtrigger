@@ -19,9 +19,15 @@ type BackgroundProcess struct {
 
 	// FireTrigger signals a trigger should be fired
 	FireTrigger chan data.Trigger
+
+	// AddMonitor signals a trigger should be added to the list of monitored triggers
+	AddMonitor chan data.Trigger
+
+	// RemoveMonitor signals a trigger id should not be monitored anymore
+	RemoveMonitor chan string
 }
 
-// HandleAndProcess handles system context calls and channel events to fire trigger
+// HandleAndProcess handles system context calls and channel events to fire triggers
 func (bp BackgroundProcess) HandleAndProcess(systemctx context.Context) {
 
 	//	Loop and respond to channels:
@@ -69,24 +75,25 @@ func (bp BackgroundProcess) HandleAndProcess(systemctx context.Context) {
 	}
 }
 
-// ListenForEvents monitors the collection of triggers and reloads based on changes to the trigger collection,
-//	listens for events on those triggers,
-//	and 'fires' triggers when an event (motion / button press / time) occurs
-func (bp BackgroundProcess) ListenForEvents(systemctx context.Context, firetrigger chan data.Trigger) {
+// ListenForEvents listens to channel events to add / remove monitors
+//	and 'fires' triggers when an event (motion / button press / time) occurs from a monitor
+func (bp BackgroundProcess) ListenForEvents(systemctx context.Context, addMonitor chan data.Trigger) {
+
+	//	Track our list of active event monitors.  These could be buttons or sensors
 
 	//	Loop and respond to channels:
 	for {
 		select {
-		case trigReq := <-firetrigger:
-			//	As we get a request on a channel to fire a trigger...
-			//	Create a goroutine
+		case eventMonitorReq := <-addMonitor:
+
+			//	If you need to add a monitor, spin up a background goroutine to monitor that pin
 			go func(cx context.Context, req data.Trigger) {
 
 				//	Loop through the associated webhooks
 
 				//	Fire each of them
 
-			}(systemctx, trigReq) // Launch the goroutine
+			}(systemctx, eventMonitorReq) // Launch the goroutine
 		case <-systemctx.Done():
 			fmt.Println("Stopping trigger processor")
 			return

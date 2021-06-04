@@ -28,56 +28,6 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/audio/{id}": {
-            "delete": {
-                "description": "Deletes a trigger in the system",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "triggers"
-                ],
-                "summary": "Deletes a trigger in the system",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "The trigger id to delete",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.SystemResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    },
-                    "503": {
-                        "description": "Service Unavailable",
-                        "schema": {
-                            "$ref": "#/definitions/api.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/event/{id}": {
             "get": {
                 "description": "Gets a log event.",
@@ -134,6 +84,50 @@ var doc = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api.SystemResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/trigger/fire/{id}": {
+            "post": {
+                "description": "Fires a trigger in the system",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "triggers"
+                ],
+                "summary": "Fires a trigger in the system",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The trigger id to fire",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SystemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
                         }
                     },
                     "500": {
@@ -261,6 +255,56 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/triggers/{id}": {
+            "delete": {
+                "description": "Deletes a trigger in the system",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "triggers"
+                ],
+                "summary": "Deletes a trigger in the system",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The trigger id to delete",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SystemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -350,24 +394,19 @@ var doc = `{
         "data.WebHook": {
             "type": "object",
             "properties": {
-                "contenttype": {
-                    "description": "The requested content type of the response (usually application/json)",
-                    "type": "string"
-                },
-                "httpbody": {
+                "body": {
                     "description": "The HTTP body to send.  This can be empty",
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
                 },
-                "httpheaders": {
+                "headers": {
                     "description": "The HTTP headers to send",
-                    "type": "string"
-                },
-                "httpverb": {
-                    "description": "HTTP verb (GET/PUT/POST/DELETE/etc)",
-                    "type": "string"
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "url": {
                     "description": "The URL to connect to",

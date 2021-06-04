@@ -15,6 +15,7 @@ import (
 	"github.com/danesparza/fxtrigger/data"
 	_ "github.com/danesparza/fxtrigger/docs" // swagger docs location
 	"github.com/danesparza/fxtrigger/event"
+	"github.com/danesparza/fxtrigger/trigger"
 	"github.com/danesparza/fxtrigger/triggertype"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -69,9 +70,18 @@ func start(cmd *cobra.Command, args []string) {
 	}
 	defer db.Close()
 
+	//	Create a background service object
+	backgroundService := trigger.BackgroundProcess{
+		FireTrigger:   make(chan data.Trigger),
+		AddMonitor:    make(chan data.Trigger),
+		RemoveMonitor: make(chan string),
+		DB:            db,
+		HistoryTTL:    time.Duration(int(historyttl)*24) * time.Hour,
+	}
+
 	//	Create an api service object
 	apiService := api.Service{
-		FireTrigger: make(chan data.Trigger),
+		FireTrigger: backgroundService.FireTrigger,
 		DB:          db,
 		StartTime:   time.Now(),
 		HistoryTTL:  time.Duration(int(historyttl)*24) * time.Hour,
@@ -118,7 +128,7 @@ func start(cmd *cobra.Command, args []string) {
 	restRouter.HandleFunc("/v1/triggers", apiService.ListAllTriggers).Methods("GET")       // List all triggers
 	restRouter.HandleFunc("/v1/triggers/{id}", apiService.DeleteTrigger).Methods("DELETE") // Delete a trigger
 
-	restRouter.HandleFunc("/v1/trigger/fire/{id}", apiService.ListAllTriggers).Methods("POST") // Fire a trigger
+	restRouter.HandleFunc("/v1/trigger/fire/{id}", apiService.FireSingleTrigger).Methods("POST") // Fire a trigger
 
 	//	EVENT ROUTES
 	restRouter.HandleFunc("/v1/events", apiService.GetAllEvents).Methods("GET") // List all events
@@ -130,7 +140,7 @@ func start(cmd *cobra.Command, args []string) {
 	//	Create background processes to
 	//	- listen for triggers events
 	//	- handle requests to fire a trigger:
-	// go trigger.HandleAndProcess(ctx, apiService.FireTrigger)
+	go backgroundService.HandleAndProcess(ctx)
 
 	//	Setup the CORS options:
 	log.Printf("[INFO] Allowed CORS origins: %s\n", viper.GetString("server.allowed-origins"))

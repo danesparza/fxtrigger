@@ -60,20 +60,16 @@ definitions:
     type: object
   data.WebHook:
     properties:
-      contenttype:
-        description: The requested content type of the response (usually application/json)
-        type: string
-      httpbody:
+      body:
         description: The HTTP body to send.  This can be empty
         items:
           type: integer
         type: array
-      httpheaders:
+      headers:
+        additionalProperties:
+          type: string
         description: The HTTP headers to send
-        type: string
-      httpverb:
-        description: HTTP verb (GET/PUT/POST/DELETE/etc)
-        type: string
+        type: object
       url:
         description: The URL to connect to
         type: string
@@ -88,39 +84,6 @@ info:
   title: fxTrigger
   version: "1.0"
 paths:
-  /audio/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Deletes a trigger in the system
-      parameters:
-      - description: The trigger id to delete
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/api.SystemResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-        "503":
-          description: Service Unavailable
-          schema:
-            $ref: '#/definitions/api.ErrorResponse'
-      summary: Deletes a trigger in the system
-      tags:
-      - triggers
   /event/{id}:
     get:
       consumes:
@@ -165,6 +128,35 @@ paths:
       summary: Gets all events in the system
       tags:
       - events
+  /trigger/fire/{id}:
+    post:
+      consumes:
+      - application/json
+      description: Fires a trigger in the system
+      parameters:
+      - description: The trigger id to fire
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SystemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Fires a trigger in the system
+      tags:
+      - triggers
   /triggers:
     get:
       consumes:
@@ -240,6 +232,39 @@ paths:
           schema:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Update a trigger
+      tags:
+      - triggers
+  /triggers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a trigger in the system
+      parameters:
+      - description: The trigger id to delete
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SystemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Deletes a trigger in the system
       tags:
       - triggers
 swagger: "2.0"
