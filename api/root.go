@@ -23,7 +23,7 @@ type Service struct {
 type CreateTriggerRequest struct {
 	Name                          string         `json:"name"`                          // The trigger name
 	Description                   string         `json:"description"`                   // Additional information about the trigger
-	GPIOPin                       string         `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
+	GPIOPin                       int            `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
 	WebHooks                      []data.WebHook `json:"webhooks"`                      // The webhooks to send when triggered
 	MinimumSecondsBeforeRetrigger int            `json:"minimumsecondsbeforeretrigger"` // Minimum time (in seconds) before a retrigger
 }
@@ -34,7 +34,7 @@ type UpdateTriggerRequest struct {
 	Enabled                       bool           `json:"enabled"`                       // Trigger enabled or not
 	Name                          string         `json:"name"`                          // The trigger name
 	Description                   string         `json:"description"`                   // Additional information about the trigger
-	GPIOPin                       string         `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
+	GPIOPin                       int            `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
 	WebHooks                      []data.WebHook `json:"webhooks"`                      // The webhooks to send when triggered
 	MinimumSecondsBeforeRetrigger int            `json:"minimumsecondsbeforeretrigger"` // Minimum time (in seconds) before a retrigger
 }

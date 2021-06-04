@@ -21,7 +21,7 @@ func TestTrigger_AddTrigger_ValidTrigger_Successful(t *testing.T) {
 		os.RemoveAll(systemdb)
 	}()
 
-	testTrigger := data.Trigger{Name: "Unit test trigger", Description: "Unit test trigger desc", GPIOPin: "23", WebHooks: []data.WebHook{}}
+	testTrigger := data.Trigger{Name: "Unit test trigger", Description: "Unit test trigger desc", GPIOPin: 23, WebHooks: []data.WebHook{}}
 
 	//	Act
 	newTrigger, err := db.AddTrigger(testTrigger.Name, testTrigger.Description, testTrigger.GPIOPin, testTrigger.WebHooks, testTrigger.MinimumSecondsBeforeRetrigger)
@@ -55,9 +55,9 @@ func TestTrigger_GetTrigger_ValidTrigger_Successful(t *testing.T) {
 		os.RemoveAll(systemdb)
 	}()
 
-	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: "11"}
-	testTrigger2 := data.Trigger{Name: "Trigger 2", Description: "Unit test 2", GPIOPin: "12"}
-	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: "13"}
+	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: 11}
+	testTrigger2 := data.Trigger{Name: "Trigger 2", Description: "Unit test 2", GPIOPin: 12}
+	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: 13}
 
 	//	Act
 	db.AddTrigger(testTrigger1.Name, testTrigger1.Description, testTrigger1.GPIOPin, testTrigger1.WebHooks, testTrigger1.MinimumSecondsBeforeRetrigger)
@@ -93,16 +93,16 @@ func TestTrigger_GetTrigger_ValidTriggerWithWebhooks_Successful(t *testing.T) {
 		os.RemoveAll(systemdb)
 	}()
 
-	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: "11"}
+	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: 11}
 	testTrigger2 := data.Trigger{
 		Name:        "Trigger 2",
 		Description: "Unit test 2",
-		GPIOPin:     "12",
+		GPIOPin:     12,
 		WebHooks: []data.WebHook{
 			{URL: "http://www.github.com/webhook1",
 				Headers: map[string]string{"header1": "value1", "header2": "value2"}},
 			{URL: "http://www.microsoft.com/webhook2"}}}
-	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: "13"}
+	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: 13}
 
 	//	Act
 	db.AddTrigger(testTrigger1.Name, testTrigger1.Description, testTrigger1.GPIOPin, testTrigger1.WebHooks, testTrigger1.MinimumSecondsBeforeRetrigger)
@@ -138,9 +138,9 @@ func TestTrigger_GetAllTriggers_ValidTriggers_Successful(t *testing.T) {
 		os.RemoveAll(systemdb)
 	}()
 
-	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: "11"}
-	testTrigger2 := data.Trigger{Name: "Trigger 2", Description: "Unit test 2", GPIOPin: "12"}
-	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: "13"}
+	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: 11}
+	testTrigger2 := data.Trigger{Name: "Trigger 2", Description: "Unit test 2", GPIOPin: 12}
+	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: 13}
 
 	//	Act
 	db.AddTrigger(testTrigger1.Name, testTrigger1.Description, testTrigger1.GPIOPin, testTrigger1.WebHooks, testTrigger1.MinimumSecondsBeforeRetrigger)
@@ -177,9 +177,9 @@ func TestTrigger_UpdateTrigger_ValidTriggers_Successful(t *testing.T) {
 		os.RemoveAll(systemdb)
 	}()
 
-	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: "11"}
-	testTrigger2 := data.Trigger{Name: "Trigger 2", Description: "Unit test 2", GPIOPin: "12"}
-	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: "13"}
+	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: 11}
+	testTrigger2 := data.Trigger{Name: "Trigger 2", Description: "Unit test 2", GPIOPin: 12}
+	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: 13}
 
 	//	Act
 	db.AddTrigger(testTrigger1.Name, testTrigger1.Description, testTrigger1.GPIOPin, testTrigger1.WebHooks, testTrigger1.MinimumSecondsBeforeRetrigger)
@@ -216,9 +216,9 @@ func TestTrigger_DeleteTrigger_ValidTriggers_Successful(t *testing.T) {
 		os.RemoveAll(systemdb)
 	}()
 
-	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: "11"}
-	testTrigger2 := data.Trigger{Name: "Trigger 2", Description: "Unit test 2", GPIOPin: "12"}
-	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: "13"}
+	testTrigger1 := data.Trigger{Name: "Trigger 1", Description: "Unit test 1", GPIOPin: 11}
+	testTrigger2 := data.Trigger{Name: "Trigger 2", Description: "Unit test 2", GPIOPin: 12}
+	testTrigger3 := data.Trigger{Name: "Trigger 3", Description: "Unit test 3", GPIOPin: 13}
 
 	//	Act
 	db.AddTrigger(testTrigger1.Name, testTrigger1.Description, testTrigger1.GPIOPin, testTrigger1.WebHooks, testTrigger1.MinimumSecondsBeforeRetrigger)

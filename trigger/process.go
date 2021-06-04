@@ -5,11 +5,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/danesparza/fxtrigger/data"
 	"github.com/danesparza/fxtrigger/event"
 	"github.com/danesparza/fxtrigger/triggertype"
+	"github.com/stianeikeland/go-rpio"
 )
 
 // BackgroundProcess encapsulates background processing operations
@@ -25,6 +28,11 @@ type BackgroundProcess struct {
 
 	// RemoveMonitor signals a trigger id should not be monitored anymore
 	RemoveMonitor chan string
+}
+
+type monitoredTriggersMap struct {
+	m       map[string]func()
+	rwMutex sync.RWMutex
 }
 
 // HandleAndProcess handles system context calls and channel events to fire triggers
@@ -77,23 +85,103 @@ func (bp BackgroundProcess) HandleAndProcess(systemctx context.Context) {
 
 // ListenForEvents listens to channel events to add / remove monitors
 //	and 'fires' triggers when an event (motion / button press / time) occurs from a monitor
-func (bp BackgroundProcess) ListenForEvents(systemctx context.Context, addMonitor chan data.Trigger) {
+func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 
 	//	Track our list of active event monitors.  These could be buttons or sensors
+	monitoredTriggers := monitoredTriggersMap{m: make(map[string]func())}
 
 	//	Loop and respond to channels:
 	for {
 		select {
-		case eventMonitorReq := <-addMonitor:
+		case monitorReq := <-bp.AddMonitor:
+			//	This should be called when creating a trigger,
+			//	when initializing the service,
+			//	or when enabling a trigger (that was previously disabled)
 
 			//	If you need to add a monitor, spin up a background goroutine to monitor that pin
 			go func(cx context.Context, req data.Trigger) {
 
-				//	Loop through the associated webhooks
+				//	Create a cancelable context from the passed (system) context
+				ctx, cancel := context.WithCancel(cx)
+				defer cancel()
 
-				//	Fire each of them
+				//	Add an entry to the map with
+				//	- key: triggerid
+				//	- value: the cancel function (pointer)
+				//	(critical section)
+				monitoredTriggers.rwMutex.Lock()
+				monitoredTriggers.m[req.ID] = cancel
+				monitoredTriggers.rwMutex.Unlock()
 
-			}(systemctx, eventMonitorReq) // Launch the goroutine
+				if err := rpio.Open(); err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				defer rpio.Close()
+
+				pin := rpio.Pin(req.GPIOPin)
+				pin.Mode(rpio.Input)
+
+				//	Store the 'last reading'
+				//	Initially, set it to the 'low' (no motion) state
+				lr := rpio.Low
+				lastTrigger := time.Unix(0, 0) // Initialize with 1/1/1970
+
+				//	Our channel checker and sensor reader
+				for {
+					select {
+					case <-ctx.Done():
+						//	Remove ourselves from the map and exit (critical section)
+						monitoredTriggers.rwMutex.Lock()
+						delete(monitoredTriggers.m, req.ID)
+						monitoredTriggers.rwMutex.Unlock()
+						return
+					case <-time.After(500 * time.Millisecond):
+						//	Read from the sensor
+						v := pin.Read()
+
+						//	Latch / unlatch check
+						if lr != v {
+							lr = v
+							currentTime := time.Now()
+							diff := currentTime.Sub(lastTrigger)
+
+							if lr == rpio.High {
+								if diff.Seconds() > float64(req.MinimumSecondsBeforeRetrigger) {
+									//	If it's been long enough -- reset the lrTime to now
+									//	and actually trigger the item
+									lastTrigger = currentTime
+									fmt.Printf("Motion detected on %v - triggering!\n", req.GPIOPin)
+								} else {
+									fmt.Printf("Motion detected on %v but it hasn't been long enough to trigger\n", req.GPIOPin)
+								}
+							}
+							if lr == rpio.Low {
+								fmt.Printf("Motion reset on %v\n", req.GPIOPin)
+							}
+						}
+					}
+				}
+
+			}(systemctx, monitorReq) // Launch the goroutine
+
+		case removeReq := <-bp.RemoveMonitor:
+			//	This should be called when removing a trigger (permanently)
+			//	or when disabling a trigger
+
+			//	Look up the item in the map and call cancel if the item exists (critical section):
+			monitoredTriggers.rwMutex.Lock()
+			monitorCancel, exists := monitoredTriggers.m[removeReq]
+
+			if exists {
+				//	Call the context cancellation function
+				monitorCancel()
+
+				//	Remove ourselves from the map and exit
+				delete(monitoredTriggers.m, removeReq)
+			}
+			monitoredTriggers.rwMutex.Unlock()
+
 		case <-systemctx.Done():
 			fmt.Println("Stopping trigger processor")
 			return

@@ -16,7 +16,7 @@ type Trigger struct {
 	Created                       time.Time `json:"created"`                       // Trigger create time
 	Name                          string    `json:"name"`                          // The trigger name
 	Description                   string    `json:"description"`                   // Additional information about the trigger
-	GPIOPin                       string    `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
+	GPIOPin                       int       `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
 	WebHooks                      []WebHook `json:"webhooks"`                      // The webhooks to send when triggered
 	MinimumSecondsBeforeRetrigger int       `json:"minimumsecondsbeforeretrigger"` // Minimum time (in seconds) before a retrigger
 }
@@ -31,7 +31,7 @@ type WebHook struct {
 }
 
 // AddTrigger adds a trigger to the system
-func (store Manager) AddTrigger(name, description, gpiopin string, webhooks []WebHook, minimumsleep int) (Trigger, error) {
+func (store Manager) AddTrigger(name, description string, gpiopin int, webhooks []WebHook, minimumsleep int) (Trigger, error) {
 
 	//	Our return item
 	retval := Trigger{}
