@@ -17,6 +17,12 @@ type Service struct {
 
 	// FireTrigger signals a trigger should be fired
 	FireTrigger chan data.Trigger
+
+	// AddMonitor signals a trigger should be added to the list of monitored triggers
+	AddMonitor chan data.Trigger
+
+	// RemoveMonitor signals a trigger id should not be monitored anymore
+	RemoveMonitor chan string
 }
 
 // CreateTriggerRequest is a request to create a new trigger

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"sync"
@@ -151,12 +152,14 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 									//	If it's been long enough -- reset the lrTime to now
 									//	and actually trigger the item
 									lastTrigger = currentTime
-									fmt.Printf("Motion detected on %v - triggering!\n", req.GPIOPin)
+									bp.DB.AddEvent(event.MotionEvent, triggertype.Unknown, fmt.Sprintf("Motion detected on GPIO %v for trigger %s.  Firing event!", req.GPIOPin, req.ID), "", bp.HistoryTTL)
 								} else {
-									fmt.Printf("Motion detected on %v but it hasn't been long enough to trigger\n", req.GPIOPin)
+									bp.DB.AddEvent(event.MotionNotTimedOut, triggertype.Unknown, fmt.Sprintf("Motion detected on GPIO %v for trigger %s, but it hasn't been at least %v seconds yet.  Not triggering", req.GPIOPin, req.ID, req.MinimumSecondsBeforeRetrigger), "", bp.HistoryTTL)
 								}
 							}
 							if lr == rpio.Low {
+								bp.DB.AddEvent(event.MotionReset, triggertype.Unknown, fmt.Sprintf("Motion reset on GPIO %v for trigger %s.", req.GPIOPin, req.ID), "", bp.HistoryTTL)
+
 								fmt.Printf("Motion reset on %v\n", req.GPIOPin)
 							}
 						}
@@ -185,6 +188,23 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 		case <-systemctx.Done():
 			fmt.Println("Stopping trigger processor")
 			return
+		}
+	}
+}
+
+// InitializeMonitors starts all monitoring processes
+func (bp BackgroundProcess) InitializeMonitors() {
+
+	//	Get all triggers:
+	allTriggers, err := bp.DB.GetAllTriggers()
+	if err != nil {
+		log.Fatalf("Problem getting all triggers to initialze monitors: %v", err)
+	}
+
+	//	Start monitoring all enabled triggers:
+	for _, trigger := range allTriggers {
+		if trigger.Enabled {
+			bp.AddMonitor <- trigger
 		}
 	}
 }

@@ -140,7 +140,11 @@ func start(cmd *cobra.Command, args []string) {
 	//	Create background processes to
 	//	- listen for triggers events
 	//	- handle requests to fire a trigger:
+	go backgroundService.ListenForEvents(ctx)
 	go backgroundService.HandleAndProcess(ctx)
+
+	//	Initialize monitoring
+	backgroundService.InitializeMonitors()
 
 	//	Setup the CORS options:
 	log.Printf("[INFO] Allowed CORS origins: %s\n", viper.GetString("server.allowed-origins"))

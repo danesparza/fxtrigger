@@ -81,6 +81,9 @@ func (service Service) CreateTrigger(rw http.ResponseWriter, req *http.Request) 
 	//	Record the event:
 	service.DB.AddEvent(event.TriggerCreated, triggertype.Unknown, fmt.Sprintf("%+v", request), GetIP(req), service.HistoryTTL)
 
+	//	Add the new trigger to monitoring:
+	service.AddMonitor <- newTrigger
+
 	//	Create our response and send information back:
 	response := SystemResponse{
 		Message: "Trigger created",
@@ -196,6 +199,9 @@ func (service Service) DeleteTrigger(rw http.ResponseWriter, req *http.Request) 
 
 	//	Record the event:
 	service.DB.AddEvent(event.TriggerDeleted, triggertype.Unknown, vars["id"], GetIP(req), service.HistoryTTL)
+
+	//	Remove the trigger from monitoring:
+	service.RemoveMonitor <- vars["id"]
 
 	//	Construct our response
 	response := SystemResponse{
