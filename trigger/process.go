@@ -99,6 +99,8 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 			//	when initializing the service,
 			//	or when enabling a trigger (that was previously disabled)
 
+			bp.DB.AddEvent(event.MonitoringStarted, triggertype.Unknown, fmt.Sprintf("Monitoring starting for GPIO %v for trigger %s.", monitorReq.GPIOPin, monitorReq.ID), "", bp.HistoryTTL)
+
 			//	If you need to add a monitor, spin up a background goroutine to monitor that pin
 			go func(cx context.Context, req data.Trigger) {
 
@@ -127,6 +129,8 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 				//	Initially, set it to the 'low' (no motion) state
 				lr := rpio.Low
 				lastTrigger := time.Unix(0, 0) // Initialize with 1/1/1970
+
+				bp.DB.AddEvent(event.MonitoringStarted, triggertype.Unknown, fmt.Sprintf("Monitoring started for GPIO %v for trigger %s.", req.GPIOPin, req.ID), "", bp.HistoryTTL)
 
 				//	Our channel checker and sensor reader
 				for {
@@ -159,8 +163,6 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 							}
 							if lr == rpio.Low {
 								bp.DB.AddEvent(event.MotionReset, triggertype.Unknown, fmt.Sprintf("Motion reset on GPIO %v for trigger %s.", req.GPIOPin, req.ID), "", bp.HistoryTTL)
-
-								fmt.Printf("Motion reset on %v\n", req.GPIOPin)
 							}
 						}
 					}
@@ -177,6 +179,8 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 			monitorCancel, exists := monitoredTriggers.m[removeReq]
 
 			if exists {
+				bp.DB.AddEvent(event.MonitoringStopped, triggertype.Unknown, fmt.Sprintf("Monitoring stopped for trigger %s.", removeReq), "", bp.HistoryTTL)
+
 				//	Call the context cancellation function
 				monitorCancel()
 
@@ -200,6 +204,8 @@ func (bp BackgroundProcess) InitializeMonitors() {
 	if err != nil {
 		log.Fatalf("Problem getting all triggers to initialze monitors: %v", err)
 	}
+
+	bp.DB.AddEvent(event.MonitoringStarted, triggertype.Unknown, fmt.Sprintf("Initializing monitoring for %v triggers", len(allTriggers)), "", bp.HistoryTTL)
 
 	//	Start monitoring all enabled triggers:
 	for _, trigger := range allTriggers {

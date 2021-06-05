@@ -19,6 +19,12 @@ const (
 	// TriggerError event is when there was an error processing a trigger
 	TriggerError = "Trigger error"
 
+	// MonitoringStarted event is when monitoring has started for a specific GPIO pin
+	MonitoringStarted = "Monitoring started"
+
+	// MonitoringStopped event is when monitoring has stopped for a specific GPIO pin
+	MonitoringStopped = "Monitoring stopped"
+
 	// MotionEvent is when a motion event has occurred
 	MotionEvent = "Motion event"
 
