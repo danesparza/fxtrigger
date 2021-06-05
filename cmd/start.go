@@ -81,10 +81,12 @@ func start(cmd *cobra.Command, args []string) {
 
 	//	Create an api service object
 	apiService := api.Service{
-		FireTrigger: backgroundService.FireTrigger,
-		DB:          db,
-		StartTime:   time.Now(),
-		HistoryTTL:  time.Duration(int(historyttl)*24) * time.Hour,
+		FireTrigger:   backgroundService.FireTrigger,
+		AddMonitor:    backgroundService.AddMonitor,
+		RemoveMonitor: backgroundService.RemoveMonitor,
+		DB:            db,
+		StartTime:     time.Now(),
+		HistoryTTL:    time.Duration(int(historyttl)*24) * time.Hour,
 	}
 
 	//	Trap program exit appropriately
