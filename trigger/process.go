@@ -152,14 +152,14 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 							diff := currentTime.Sub(lastTrigger)
 
 							if lr == rpio.High {
-								if diff.Seconds() > 10 {
+								if diff.Seconds() > float64(req.MinimumSecondsBeforeRetrigger) {
 									//	If it's been long enough -- reset the lrTime to now
 									//	and actually trigger the item
 									lastTrigger = currentTime
 									bp.DB.AddEvent(event.MotionEvent, triggertype.Unknown, fmt.Sprintf("Motion detected on GPIO %v for trigger %s.  Firing event!", req.GPIOPin, req.ID), "", bp.HistoryTTL)
 									bp.FireTrigger <- req
 								} else {
-									bp.DB.AddEvent(event.MotionNotTimedOut, triggertype.Unknown, fmt.Sprintf("Motion detected on GPIO %v for trigger %s, but it hasn't been at least %v seconds yet.  Not triggering", req.GPIOPin, req.ID, 10), "", bp.HistoryTTL)
+									bp.DB.AddEvent(event.MotionNotTimedOut, triggertype.Unknown, fmt.Sprintf("Motion detected on GPIO %v for trigger %s, but it hasn't been at least %v seconds yet.  Not triggering", req.GPIOPin, req.ID, req.MinimumSecondsBeforeRetrigger), "", bp.HistoryTTL)
 								}
 							}
 							if lr == rpio.Low {
