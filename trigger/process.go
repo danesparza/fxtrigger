@@ -13,7 +13,7 @@ import (
 	"github.com/danesparza/fxtrigger/data"
 	"github.com/danesparza/fxtrigger/event"
 	"github.com/danesparza/fxtrigger/triggertype"
-	"github.com/stianeikeland/go-rpio"
+	"github.com/danesparza/go-rpio"
 )
 
 // BackgroundProcess encapsulates background processing operations
