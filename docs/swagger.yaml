@@ -7,7 +7,7 @@ definitions:
         type: string
       gpiopin:
         description: The GPIO pin the sensor or button is on
-        type: string
+        type: integer
       minimumsecondsbeforeretrigger:
         description: Minimum time (in seconds) before a retrigger
         type: integer
@@ -42,7 +42,7 @@ definitions:
         type: boolean
       gpiopin:
         description: The GPIO pin the sensor or button is on
-        type: string
+        type: integer
       id:
         description: Unique Trigger ID
         type: string

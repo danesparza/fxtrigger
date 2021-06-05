@@ -317,7 +317,7 @@ var doc = `{
                 },
                 "gpiopin": {
                     "description": "The GPIO pin the sensor or button is on",
-                    "type": "string"
+                    "type": "integer"
                 },
                 "minimumsecondsbeforeretrigger": {
                     "description": "Minimum time (in seconds) before a retrigger",
@@ -368,7 +368,7 @@ var doc = `{
                 },
                 "gpiopin": {
                     "description": "The GPIO pin the sensor or button is on",
-                    "type": "string"
+                    "type": "integer"
                 },
                 "id": {
                     "description": "Unique Trigger ID",
