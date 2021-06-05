@@ -247,12 +247,12 @@ func (service Service) FireSingleTrigger(rw http.ResponseWriter, req *http.Reque
 	service.FireTrigger <- trigger
 
 	//	Record the event:
-	service.DB.AddEvent(event.TriggerFired, triggertype.Unknown, vars["id"], GetIP(req), service.HistoryTTL)
+	service.DB.AddEvent(event.TriggerFired, triggertype.Unknown, fmt.Sprintf("Trigger ID: %s / Name: %s", trigger.ID, trigger.Name), GetIP(req), service.HistoryTTL)
 
 	//	Construct our response
 	response := SystemResponse{
 		Message: "Trigger fired",
-		Data:    vars["id"],
+		Data:    trigger,
 	}
 
 	//	Serialize to JSON & return the response:
