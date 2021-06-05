@@ -146,7 +146,7 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 						//	Read from the sensor
 						v := pin.Read()
 
-						log.Printf("Read: %v", v)
+						log.Printf("GPIO %v Read: %v", req.GPIOPin, v)
 
 						//	Latch / unlatch check
 						if lr != v {
