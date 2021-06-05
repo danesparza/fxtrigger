@@ -131,7 +131,6 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 				lastTrigger := time.Unix(0, 0) // Initialize with 1/1/1970
 
 				bp.DB.AddEvent(event.MonitoringStarted, triggertype.Unknown, fmt.Sprintf("Monitoring started for GPIO %v for trigger %s.", req.GPIOPin, req.ID), "", bp.HistoryTTL)
-				log.Printf("Monitoring started for %v", req.GPIOPin)
 
 				//	Our channel checker and sensor reader
 				for {
@@ -145,8 +144,6 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 					case <-time.After(500 * time.Millisecond):
 						//	Read from the sensor
 						v := pin.Read()
-
-						log.Printf("GPIO %v Read: %v", req.GPIOPin, v)
 
 						//	Latch / unlatch check
 						if lr != v {
