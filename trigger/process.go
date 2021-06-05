@@ -146,6 +146,8 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 						//	Read from the sensor
 						v := pin.Read()
 
+						log.Printf("Read: %v", v)
+
 						//	Latch / unlatch check
 						if lr != v {
 							lr = v
