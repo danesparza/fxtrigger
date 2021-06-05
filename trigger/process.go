@@ -131,6 +131,7 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 				lastTrigger := time.Unix(0, 0) // Initialize with 1/1/1970
 
 				bp.DB.AddEvent(event.MonitoringStarted, triggertype.Unknown, fmt.Sprintf("Monitoring started for GPIO %v for trigger %s.", req.GPIOPin, req.ID), "", bp.HistoryTTL)
+				log.Printf("Monitoring started for %v", req.GPIOPin)
 
 				//	Our channel checker and sensor reader
 				for {
@@ -157,6 +158,7 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 									//	and actually trigger the item
 									lastTrigger = currentTime
 									bp.DB.AddEvent(event.MotionEvent, triggertype.Unknown, fmt.Sprintf("Motion detected on GPIO %v for trigger %s.  Firing event!", req.GPIOPin, req.ID), "", bp.HistoryTTL)
+									bp.FireTrigger <- req
 								} else {
 									bp.DB.AddEvent(event.MotionNotTimedOut, triggertype.Unknown, fmt.Sprintf("Motion detected on GPIO %v for trigger %s, but it hasn't been at least %v seconds yet.  Not triggering", req.GPIOPin, req.ID, req.MinimumSecondsBeforeRetrigger), "", bp.HistoryTTL)
 								}
