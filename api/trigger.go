@@ -136,12 +136,6 @@ func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	//	If we don't have any webhooks associated, make sure we indicate that's not valid
-	if len(request.WebHooks) < 1 {
-		sendErrorResponse(rw, fmt.Errorf("at least one webhook must be included"), http.StatusBadRequest)
-		return
-	}
-
 	//	See if 'enabled' has changed
 	if trigUpdate.Enabled != request.Enabled {
 		if request.Enabled {
