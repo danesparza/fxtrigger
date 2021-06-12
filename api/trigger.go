@@ -153,13 +153,32 @@ func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) 
 		}
 	}
 
-	//	Update the trigger:
-	trigUpdate.Name = request.Name
-	trigUpdate.Description = request.Description
+	//	Only update the name if it's been passed
+	if strings.TrimSpace(request.Name) != "" {
+		trigUpdate.Name = request.Name
+	}
+
+	//	Only update the description if it's been passed
+	if strings.TrimSpace(request.Description) != "" {
+		trigUpdate.Description = request.Description
+	}
+
+	//	Enabled / disabled is always set
 	trigUpdate.Enabled = request.Enabled
-	trigUpdate.GPIOPin = request.GPIOPin
+
+	//	If the GPIO pin is not zero (the default value of an int) pass it in.  Yes -- GPIO 0 is valid,
+	//	but is generally reserved for special uses.  See https://pinout.xyz/pinout/pin27_gpio0#
+	if request.GPIOPin != 0 {
+		trigUpdate.GPIOPin = request.GPIOPin
+	}
+
+	//	This is an int. It's always going to get updated
 	trigUpdate.MinimumSecondsBeforeRetrigger = request.MinimumSecondsBeforeRetrigger
-	trigUpdate.WebHooks = request.WebHooks
+
+	//	Only update webhooks if we've passed some in
+	if len(request.WebHooks) > 0 {
+		trigUpdate.WebHooks = request.WebHooks
+	}
 
 	//	Create the new trigger:
 	updatedTrigger, err := service.DB.UpdateTrigger(trigUpdate)
