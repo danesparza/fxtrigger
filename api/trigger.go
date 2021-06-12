@@ -108,6 +108,10 @@ func (service Service) CreateTrigger(rw http.ResponseWriter, req *http.Request) 
 // @Router /triggers [put]
 func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) {
 
+	//	Some state change instructions
+	shouldAddMonitoring := false
+	shouldRemoveMonitoring := false
+
 	//	req.Body is a ReadCloser -- we need to remember to close it:
 	defer req.Body.Close()
 
@@ -138,6 +142,17 @@ func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) 
 		return
 	}
 
+	//	See if 'enabled' has changed
+	if trigUpdate.Enabled != request.Enabled {
+		if request.Enabled {
+			//	If it has, and it's now 'enabled', add the trigger to monitoring
+			shouldAddMonitoring = true
+		} else {
+			//	If it has, and it's now 'disabled', remove the trigger from monitoring
+			shouldRemoveMonitoring = true
+		}
+	}
+
 	//	Update the trigger:
 	trigUpdate.Name = request.Name
 	trigUpdate.Description = request.Description
@@ -155,6 +170,17 @@ func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) 
 
 	//	Record the event:
 	service.DB.AddEvent(event.TriggerUpdated, triggertype.Unknown, fmt.Sprintf("%+v", request), GetIP(req), service.HistoryTTL)
+
+	//	If we have a state change, make sure to add/remove monitoring and record that event as well
+	if shouldAddMonitoring {
+		service.AddMonitor <- trigUpdate
+		service.DB.AddEvent(event.TriggerUpdated, triggertype.Unknown, fmt.Sprintf("Trigger ID %s is now marked as 'enabled' ... adding to active event monitors", trigUpdate.ID), GetIP(req), service.HistoryTTL)
+	}
+
+	if shouldRemoveMonitoring {
+		service.RemoveMonitor <- trigUpdate.ID
+		service.DB.AddEvent(event.TriggerUpdated, triggertype.Unknown, fmt.Sprintf("Trigger ID %s is no longer marked as 'enabled' ... removing from active event monitors", trigUpdate.ID), GetIP(req), service.HistoryTTL)
+	}
 
 	//	Create our response and send information back:
 	response := SystemResponse{
