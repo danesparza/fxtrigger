@@ -99,8 +99,6 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 			//	when initializing the service,
 			//	or when enabling a trigger (that was previously disabled)
 
-			bp.DB.AddEvent(event.MonitoringStarted, triggertype.Unknown, fmt.Sprintf("Monitoring starting for GPIO %v for trigger %s.", monitorReq.GPIOPin, monitorReq.ID), "", bp.HistoryTTL)
-
 			//	If you need to add a monitor, spin up a background goroutine to monitor that pin
 			go func(cx context.Context, req data.Trigger) {
 
