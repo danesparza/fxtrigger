@@ -124,7 +124,7 @@ func start(cmd *cobra.Command, args []string) {
 		restRouter.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir(viper.GetString("server.ui-dir")))))
 	}
 
-	//	AUDIO ROUTES
+	//	TRIGGER ROUTES
 	restRouter.HandleFunc("/v1/triggers", apiService.CreateTrigger).Methods("POST")        // Create a trigger
 	restRouter.HandleFunc("/v1/triggers", apiService.UpdateTrigger).Methods("PUT")         // Update a trigger
 	restRouter.HandleFunc("/v1/triggers", apiService.ListAllTriggers).Methods("GET")       // List all triggers
