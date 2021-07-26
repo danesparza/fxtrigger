@@ -172,6 +172,8 @@ func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) 
 	//	Only update webhooks if we've passed some in
 	if len(request.WebHooks) > 0 {
 		trigUpdate.WebHooks = request.WebHooks
+		service.RemoveMonitor <- trigUpdate.ID
+		shouldAddMonitoring = true
 	}
 
 	//	Create the new trigger:
