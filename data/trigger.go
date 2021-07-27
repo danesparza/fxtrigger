@@ -25,9 +25,9 @@ type Trigger struct {
 // It's always content type: application/json
 // It's always HTTP verb POST
 type WebHook struct {
-	URL     string            `json:"url"`     // The URL to connect to
-	Headers map[string]string `json:"headers"` // The HTTP headers to send
-	Body    []byte            `json:"body"`    // The HTTP body to send.  This can be empty
+	URL     string            `json:"url"`               // The URL to connect to
+	Headers map[string]string `json:"headers,omitempty"` // The HTTP headers to send
+	Body    []byte            `json:"body,omitempty"`    // The HTTP body to send.  This can be empty
 }
 
 // AddTrigger adds a trigger to the system
