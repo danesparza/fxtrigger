@@ -2,21 +2,18 @@ package cmd
 
 import (
 	"context"
-	data2 "github.com/danesparza/fxtrigger/internal/data"
+	"github.com/danesparza/fxtrigger/internal/data"
 	"github.com/danesparza/fxtrigger/internal/trigger"
-	"github.com/danesparza/fxtrigger/internal/triggertype"
-	"log"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/danesparza/fxtrigger/api"
 	_ "github.com/danesparza/fxtrigger/docs" // swagger docs location
-	"github.com/danesparza/fxtrigger/event"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
@@ -36,34 +33,26 @@ func start(cmd *cobra.Command, args []string) {
 
 	//	If we have a config file, report it:
 	if viper.ConfigFileUsed() != "" {
-		log.Println("[DEBUG] Using config file:", viper.ConfigFileUsed())
+		log.Debug().Str("configFile", viper.ConfigFileUsed()).Msg("Using config file")
 	} else {
-		log.Println("[DEBUG] No config file found.")
+		log.Debug().Msg("No config file found")
 	}
 
-	retentiondays := viper.GetString("datastore.retentiondays")
 	systemdb := viper.GetString("datastore.system")
 	dndschedule := viper.GetString("trigger.dndschedule")
 	dndstarttime := viper.GetString("trigger.dndstart")
 	dndendtime := viper.GetString("trigger.dndend")
 
 	//	Emit what we know:
-	log.Printf("[INFO] ************* CONFIG *************\n")
-	log.Printf("[INFO] System DB: %s\n", systemdb)
-	log.Printf("[INFO] History retention: %s days\n", retentiondays)
-	log.Printf("[INFO] Use Do not Disturb schedule? %s\n", dndschedule)
-	log.Printf("[INFO] Do not disturb start time: %s bytes\n", dndstarttime)
-	log.Printf("[INFO] Do not disturb end time: %s bytes\n", dndendtime)
-	log.Printf("[INFO] **************************\n")
-
-	//	Log the log retention (in days):
-	historyttl, err := strconv.Atoi(retentiondays)
-	if err != nil {
-		log.Fatalf("[ERROR] The datastore.retentiondays config is invalid: %s", err)
-	}
+	log.Info().
+		Str("systemdb", systemdb).
+		Str("dndschedule", dndschedule).
+		Str("dndstarttime", dndstarttime).
+		Str("dndendtime", dndendtime).
+		Msg("Config")
 
 	//	Create a DBManager object and associate with the api.Service
-	db, err := data2.NewManager(systemdb)
+	db, err := data.NewManager(systemdb)
 	if err != nil {
 		log.Printf("[ERROR] Error trying to open the system database: %s", err)
 		return
@@ -72,11 +61,10 @@ func start(cmd *cobra.Command, args []string) {
 
 	//	Create a background service object
 	backgroundService := trigger.BackgroundProcess{
-		FireTrigger:   make(chan data2.Trigger),
-		AddMonitor:    make(chan data2.Trigger),
+		FireTrigger:   make(chan data.Trigger),
+		AddMonitor:    make(chan data.Trigger),
 		RemoveMonitor: make(chan string),
 		DB:            db,
-		HistoryTTL:    time.Duration(int(historyttl)*24) * time.Hour,
 	}
 
 	//	Create an api service object
@@ -86,21 +74,16 @@ func start(cmd *cobra.Command, args []string) {
 		RemoveMonitor: backgroundService.RemoveMonitor,
 		DB:            db,
 		StartTime:     time.Now(),
-		HistoryTTL:    time.Duration(int(historyttl)*24) * time.Hour,
 	}
 
 	//	Trap program exit appropriately
 	ctx, cancel := context.WithCancel(context.Background())
 	sigs := make(chan os.Signal, 2)
 	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
-	go handleSignals(ctx, sigs, cancel, db, apiService.HistoryTTL)
+	go handleSignals(ctx, sigs, cancel)
 
 	//	Log that the system has started:
-	_, err = db.AddEvent(event.SystemStartup, triggertype.System, "System started", "", apiService.HistoryTTL)
-	if err != nil {
-		log.Fatalf("[ERROR] Error trying to log to the system datastore: %s", err)
-		return
-	}
+	log.Info().Msg("System started")
 
 	//	Create a router and setup our REST endpoints...
 	restRouter := mux.NewRouter()
@@ -131,10 +114,6 @@ func start(cmd *cobra.Command, args []string) {
 	restRouter.HandleFunc("/v1/triggers/{id}", apiService.DeleteTrigger).Methods("DELETE") // Delete a trigger
 
 	restRouter.HandleFunc("/v1/trigger/fire/{id}", apiService.FireSingleTrigger).Methods("POST") // Fire a trigger
-
-	//	EVENT ROUTES
-	restRouter.HandleFunc("/v1/events", apiService.GetAllEvents).Methods("GET") // List all events
-	restRouter.HandleFunc("/v1/event/{id}", apiService.GetEvent).Methods("GET") // Get a specific log event
 
 	//	SWAGGER ROUTES
 	restRouter.PathPrefix("/v1/swagger").Handler(httpSwagger.WrapHandler)
@@ -167,24 +146,18 @@ func start(cmd *cobra.Command, args []string) {
 	log.Printf("[ERROR] %v\n", http.ListenAndServe(viper.GetString("server.bind")+":"+viper.GetString("server.port"), uiCorsRouter))
 }
 
-func handleSignals(ctx context.Context, sigs <-chan os.Signal, cancel context.CancelFunc, db *data2.Manager, historyttl time.Duration) {
+func handleSignals(ctx context.Context, sigs <-chan os.Signal, cancel context.CancelFunc) {
 	select {
 	case <-ctx.Done():
 	case sig := <-sigs:
 		switch sig {
 		case os.Interrupt:
-			log.Println("[INFO] SIGINT")
+			log.Info().Msg("SIGINT")
 		case syscall.SIGTERM:
-			log.Println("[INFO] SIGTERM")
+			log.Info().Msg("SIGTERM")
 		}
 
-		//	Log that the system has started:
-		_, err := db.AddEvent(event.SystemShutdown, triggertype.System, "System stopping", "", historyttl)
-		if err != nil {
-			log.Printf("[ERROR] Error trying to log to the system datastore: %s", err)
-		}
-
-		log.Println("[INFO] Shutting down ...")
+		log.Info().Msg("Shutting down ...")
 		cancel()
 		os.Exit(0)
 	}

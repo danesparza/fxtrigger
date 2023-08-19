@@ -288,7 +288,7 @@ func (service Service) FireSingleTrigger(rw http.ResponseWriter, req *http.Reque
 
 	//	Record the event:
 	log.Debug().Str("id", trigger.ID).Str("name", trigger.Name).Msg("Trigger fired")
-	
+
 	//	Construct our response
 	response := SystemResponse{
 		Message: "Trigger fired",

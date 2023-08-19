@@ -4,28 +4,26 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	data2 "github.com/danesparza/fxtrigger/internal/data"
-	"github.com/danesparza/fxtrigger/internal/triggertype"
-	"log"
+	"github.com/danesparza/fxtrigger/internal/data"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/danesparza/fxtrigger/event"
 	"github.com/danesparza/go-rpio"
 )
 
 // BackgroundProcess encapsulates background processing operations
 type BackgroundProcess struct {
-	DB         *data2.Manager
+	DB         *data.Manager
 	HistoryTTL time.Duration
 
 	// FireTrigger signals a trigger should be fired
-	FireTrigger chan data2.Trigger
+	FireTrigger chan data.Trigger
 
 	// AddMonitor signals a trigger should be added to the list of monitored triggers
-	AddMonitor chan data2.Trigger
+	AddMonitor chan data.Trigger
 
 	// RemoveMonitor signals a trigger id should not be monitored anymore
 	RemoveMonitor chan string
@@ -45,7 +43,7 @@ func (bp BackgroundProcess) HandleAndProcess(systemctx context.Context) {
 		case trigReq := <-bp.FireTrigger:
 			//	As we get a request on a channel to fire a trigger...
 			//	Create a goroutine
-			go func(cx context.Context, trigger data2.Trigger) {
+			go func(cx context.Context, trigger data.Trigger) {
 
 				//	Loop through the associated webhooks
 				for _, hook := range trigger.WebHooks {
@@ -54,7 +52,7 @@ func (bp BackgroundProcess) HandleAndProcess(systemctx context.Context) {
 					//	First, build the initial request with the verb, url and body (if the body exists)
 					req, err := http.NewRequestWithContext(systemctx, http.MethodPost, hook.URL, bytes.NewBuffer(hook.Body))
 					if err != nil {
-						bp.DB.AddEvent(event.TriggerError, triggertype.Unknown, fmt.Sprintf("Error creating request for trigger/hook %s/%s: %v", trigger.ID, hook.URL, err), "", bp.HistoryTTL)
+						log.Err(err).Str("TriggerID", trigger.ID).Str("HookUrl", hook.URL).Msg("Error creating request for trigger/hook")
 						continue //	Go to the next hook
 					}
 
@@ -70,7 +68,7 @@ func (bp BackgroundProcess) HandleAndProcess(systemctx context.Context) {
 					client := &http.Client{Timeout: time.Second * 10}
 					resp, err := client.Do(req)
 					if err != nil {
-						bp.DB.AddEvent(event.TriggerError, triggertype.Unknown, fmt.Sprintf("Error with response for trigger/hook %s/%s: %v", trigger.ID, hook.URL, err), "", bp.HistoryTTL)
+						log.Err(err).Str("TriggerID", trigger.ID).Str("HookUrl", hook.URL).Msg("Error with response for trigger/hook")
 						//	'continue' doesn't really matter here -- we're already at the end of this loop
 					}
 					defer resp.Body.Close()
@@ -101,7 +99,7 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 			//	or when enabling a trigger (that was previously disabled)
 
 			//	If you need to add a monitor, spin up a background goroutine to monitor that pin
-			go func(cx context.Context, req data2.Trigger) {
+			go func(cx context.Context, req data.Trigger) {
 
 				//	Create a cancelable context from the passed (system) context
 				ctx, cancel := context.WithCancel(cx)
@@ -129,7 +127,7 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 				lr := rpio.Low
 				lastTrigger := time.Unix(0, 0) // Initialize with 1/1/1970
 
-				bp.DB.AddEvent(event.MonitoringStarted, triggertype.Unknown, fmt.Sprintf("Monitoring started for GPIO %v for trigger %s.", req.GPIOPin, req.ID), "", bp.HistoryTTL)
+				log.Debug().Int("GPIOPin", req.GPIOPin).Str("TriggerID", req.ID).Msg("Monitoring started")
 
 				//	Our channel checker and sensor reader
 				for {
@@ -155,14 +153,18 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 									//	If it's been long enough -- reset the lrTime to now
 									//	and actually trigger the item
 									lastTrigger = currentTime
-									bp.DB.AddEvent(event.MotionEvent, triggertype.Unknown, fmt.Sprintf("Motion detected on GPIO %v for trigger %s.  Firing event!", req.GPIOPin, req.ID), "", bp.HistoryTTL)
+									log.Debug().Int("GPIOPin", req.GPIOPin).Str("TriggerID", req.ID).Msg("Motion detected.  Firing event")
 									bp.FireTrigger <- req
 								} else {
-									bp.DB.AddEvent(event.MotionNotTimedOut, triggertype.Unknown, fmt.Sprintf("Motion detected on GPIO %v for trigger %s, but it hasn't been at least %v seconds yet.  Not triggering", req.GPIOPin, req.ID, req.MinimumSecondsBeforeRetrigger), "", bp.HistoryTTL)
+									log.Debug().
+										Int("GPIOPin", req.GPIOPin).
+										Str("TriggerID", req.ID).
+										Int("MinimumSecondsBeforeRetrigger", req.MinimumSecondsBeforeRetrigger).
+										Msg("Motion detected, but minimum seconds threshold not met.  Not triggering.")
 								}
 							}
 							if lr == rpio.Low {
-								bp.DB.AddEvent(event.MotionReset, triggertype.Unknown, fmt.Sprintf("Motion reset on GPIO %v for trigger %s.", req.GPIOPin, req.ID), "", bp.HistoryTTL)
+								log.Debug().Int("GPIOPin", req.GPIOPin).Str("TriggerID", req.ID).Msg("Motion reset")
 							}
 						}
 					}
@@ -179,7 +181,7 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 			monitorCancel, exists := monitoredTriggers.m[removeReq]
 
 			if exists {
-				bp.DB.AddEvent(event.MonitoringStopped, triggertype.Unknown, fmt.Sprintf("Monitoring stopped for trigger %s.", removeReq), "", bp.HistoryTTL)
+				log.Debug().Str("TriggerID", removeReq).Msg("Monitoring stopped")
 
 				//	Call the context cancellation function
 				monitorCancel()
@@ -202,10 +204,10 @@ func (bp BackgroundProcess) InitializeMonitors() {
 	//	Get all triggers:
 	allTriggers, err := bp.DB.GetAllTriggers()
 	if err != nil {
-		log.Fatalf("Problem getting all triggers to initialze monitors: %v", err)
+		log.Err(err).Msg("Problem getting all triggers to initialze monitors")
 	}
 
-	bp.DB.AddEvent(event.MonitoringStarted, triggertype.Unknown, fmt.Sprintf("Initializing monitoring for %v triggers", len(allTriggers)), "", bp.HistoryTTL)
+	log.Debug().Int("TriggerCount", len(allTriggers)).Msg("Initializing monitoring")
 
 	//	Start monitoring all enabled triggers:
 	for _, trigger := range allTriggers {

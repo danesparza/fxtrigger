@@ -13,13 +13,12 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/rs/cors v1.7.0
 	github.com/rs/xid v1.5.0
-	github.com/rs/zerolog v1.30.0 // indirect
+	github.com/rs/zerolog v1.30.0
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
 	github.com/swaggo/http-swagger v1.0.0
 	github.com/swaggo/swag v1.7.0
 	github.com/tidwall/buntdb v1.2.3
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
-	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6 // indirect
 	golang.org/x/tools v0.1.2 // indirect
 )
