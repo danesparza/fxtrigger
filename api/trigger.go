@@ -3,11 +3,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/danesparza/fxtrigger/internal/triggertype"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"strings"
 
-	"github.com/danesparza/fxtrigger/event"
 	"github.com/gorilla/mux"
 )
 
@@ -79,7 +78,7 @@ func (service Service) CreateTrigger(rw http.ResponseWriter, req *http.Request) 
 	}
 
 	//	Record the event:
-	service.DB.AddEvent(event.TriggerCreated, triggertype.Unknown, fmt.Sprintf("%+v", request), GetIP(req), service.HistoryTTL)
+	log.Debug().Any("request", request).Msg("Trigger created")
 
 	//	Add the new trigger to monitoring:
 	service.AddMonitor <- newTrigger
@@ -184,17 +183,17 @@ func (service Service) UpdateTrigger(rw http.ResponseWriter, req *http.Request) 
 	}
 
 	//	Record the event:
-	service.DB.AddEvent(event.TriggerUpdated, triggertype.Unknown, fmt.Sprintf("%+v", request), GetIP(req), service.HistoryTTL)
+	log.Debug().Any("request", request).Msg("Trigger updated")
 
 	//	If we have a state change, make sure to add/remove monitoring and record that event as well
 	if shouldAddMonitoring {
 		service.AddMonitor <- trigUpdate
-		service.DB.AddEvent(event.TriggerUpdated, triggertype.Unknown, fmt.Sprintf("Trigger ID %s is now marked as 'enabled' ... adding to active event monitors", trigUpdate.ID), GetIP(req), service.HistoryTTL)
+		log.Debug().Str("id", trigUpdate.ID).Msg("Trigger monitoring enabled")
 	}
 
 	if shouldRemoveMonitoring {
 		service.RemoveMonitor <- trigUpdate.ID
-		service.DB.AddEvent(event.TriggerUpdated, triggertype.Unknown, fmt.Sprintf("Trigger ID %s is no longer marked as 'enabled' ... removing from active event monitors", trigUpdate.ID), GetIP(req), service.HistoryTTL)
+		log.Debug().Str("id", trigUpdate.ID).Msg("Trigger monitoring disabled")
 	}
 
 	//	Create our response and send information back:
@@ -239,7 +238,7 @@ func (service Service) DeleteTrigger(rw http.ResponseWriter, req *http.Request) 
 	}
 
 	//	Record the event:
-	service.DB.AddEvent(event.TriggerDeleted, triggertype.Unknown, vars["id"], GetIP(req), service.HistoryTTL)
+	log.Debug().Str("id", vars["id"]).Msg("Trigger deleted")
 
 	//	Remove the trigger from monitoring:
 	service.RemoveMonitor <- vars["id"]
@@ -288,8 +287,8 @@ func (service Service) FireSingleTrigger(rw http.ResponseWriter, req *http.Reque
 	service.FireTrigger <- trigger
 
 	//	Record the event:
-	service.DB.AddEvent(event.TriggerFired, triggertype.Unknown, fmt.Sprintf("Trigger ID: %s / Name: %s", trigger.ID, trigger.Name), GetIP(req), service.HistoryTTL)
-
+	log.Debug().Str("id", trigger.ID).Str("name", trigger.Name).Msg("Trigger fired")
+	
 	//	Construct our response
 	response := SystemResponse{
 		Message: "Trigger fired",

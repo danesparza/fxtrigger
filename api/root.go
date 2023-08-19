@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	data2 "github.com/danesparza/fxtrigger/internal/data"
 	"net/http"
 	"time"
@@ -65,12 +64,6 @@ func sendErrorResponse(rw http.ResponseWriter, err error, code int) {
 	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
 	rw.WriteHeader(code)
 	json.NewEncoder(rw).Encode(response)
-}
-
-// ShowUI redirects to the /ui/ url path
-func ShowUI(rw http.ResponseWriter, req *http.Request) {
-	// http.Redirect(rw, req, "/ui/", 301)
-	fmt.Fprintf(rw, "Hello, world - UI")
 }
 
 // GetIP gets a requests IP address by reading off the forwarded-for
