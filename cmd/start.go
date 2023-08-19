@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"context"
+	data2 "github.com/danesparza/fxtrigger/internal/data"
+	"github.com/danesparza/fxtrigger/internal/trigger"
+	"github.com/danesparza/fxtrigger/internal/triggertype"
 	"log"
 	"net/http"
 	"os"
@@ -12,11 +15,8 @@ import (
 	"time"
 
 	"github.com/danesparza/fxtrigger/api"
-	"github.com/danesparza/fxtrigger/data"
 	_ "github.com/danesparza/fxtrigger/docs" // swagger docs location
 	"github.com/danesparza/fxtrigger/event"
-	"github.com/danesparza/fxtrigger/trigger"
-	"github.com/danesparza/fxtrigger/triggertype"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
@@ -63,7 +63,7 @@ func start(cmd *cobra.Command, args []string) {
 	}
 
 	//	Create a DBManager object and associate with the api.Service
-	db, err := data.NewManager(systemdb)
+	db, err := data2.NewManager(systemdb)
 	if err != nil {
 		log.Printf("[ERROR] Error trying to open the system database: %s", err)
 		return
@@ -72,8 +72,8 @@ func start(cmd *cobra.Command, args []string) {
 
 	//	Create a background service object
 	backgroundService := trigger.BackgroundProcess{
-		FireTrigger:   make(chan data.Trigger),
-		AddMonitor:    make(chan data.Trigger),
+		FireTrigger:   make(chan data2.Trigger),
+		AddMonitor:    make(chan data2.Trigger),
 		RemoveMonitor: make(chan string),
 		DB:            db,
 		HistoryTTL:    time.Duration(int(historyttl)*24) * time.Hour,
@@ -167,7 +167,7 @@ func start(cmd *cobra.Command, args []string) {
 	log.Printf("[ERROR] %v\n", http.ListenAndServe(viper.GetString("server.bind")+":"+viper.GetString("server.port"), uiCorsRouter))
 }
 
-func handleSignals(ctx context.Context, sigs <-chan os.Signal, cancel context.CancelFunc, db *data.Manager, historyttl time.Duration) {
+func handleSignals(ctx context.Context, sigs <-chan os.Signal, cancel context.CancelFunc, db *data2.Manager, historyttl time.Duration) {
 	select {
 	case <-ctx.Done():
 	case sig := <-sigs:

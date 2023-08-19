@@ -3,23 +3,22 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	data2 "github.com/danesparza/fxtrigger/internal/data"
 	"net/http"
 	"time"
-
-	"github.com/danesparza/fxtrigger/data"
 )
 
 // Service encapsulates API service operations
 type Service struct {
-	DB         *data.Manager
+	DB         *data2.Manager
 	StartTime  time.Time
 	HistoryTTL time.Duration
 
 	// FireTrigger signals a trigger should be fired
-	FireTrigger chan data.Trigger
+	FireTrigger chan data2.Trigger
 
 	// AddMonitor signals a trigger should be added to the list of monitored triggers
-	AddMonitor chan data.Trigger
+	AddMonitor chan data2.Trigger
 
 	// RemoveMonitor signals a trigger id should not be monitored anymore
 	RemoveMonitor chan string
@@ -27,22 +26,22 @@ type Service struct {
 
 // CreateTriggerRequest is a request to create a new trigger
 type CreateTriggerRequest struct {
-	Name                          string         `json:"name"`                          // The trigger name
-	Description                   string         `json:"description"`                   // Additional information about the trigger
-	GPIOPin                       int            `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
-	WebHooks                      []data.WebHook `json:"webhooks"`                      // The webhooks to send when triggered
-	MinimumSecondsBeforeRetrigger int            `json:"minimumsecondsbeforeretrigger"` // Minimum time (in seconds) before a retrigger
+	Name                          string          `json:"name"`                          // The trigger name
+	Description                   string          `json:"description"`                   // Additional information about the trigger
+	GPIOPin                       int             `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
+	WebHooks                      []data2.WebHook `json:"webhooks"`                      // The webhooks to send when triggered
+	MinimumSecondsBeforeRetrigger int             `json:"minimumsecondsbeforeretrigger"` // Minimum time (in seconds) before a retrigger
 }
 
 // UpdateTriggerRequest is a request to update a trigger
 type UpdateTriggerRequest struct {
-	ID                            string         `json:"id"`                            // Unique Trigger ID
-	Enabled                       bool           `json:"enabled"`                       // Trigger enabled or not
-	Name                          string         `json:"name"`                          // The trigger name
-	Description                   string         `json:"description"`                   // Additional information about the trigger
-	GPIOPin                       int            `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
-	WebHooks                      []data.WebHook `json:"webhooks"`                      // The webhooks to send when triggered
-	MinimumSecondsBeforeRetrigger int            `json:"minimumsecondsbeforeretrigger"` // Minimum time (in seconds) before a retrigger
+	ID                            string          `json:"id"`                            // Unique Trigger ID
+	Enabled                       bool            `json:"enabled"`                       // Trigger enabled or not
+	Name                          string          `json:"name"`                          // The trigger name
+	Description                   string          `json:"description"`                   // Additional information about the trigger
+	GPIOPin                       int             `json:"gpiopin"`                       // The GPIO pin the sensor or button is on
+	WebHooks                      []data2.WebHook `json:"webhooks"`                      // The webhooks to send when triggered
+	MinimumSecondsBeforeRetrigger int             `json:"minimumsecondsbeforeretrigger"` // Minimum time (in seconds) before a retrigger
 }
 
 // SystemResponse is a response for a system request
@@ -56,7 +55,7 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-//	Used to send back an error:
+// Used to send back an error:
 func sendErrorResponse(rw http.ResponseWriter, err error, code int) {
 	//	Our return value
 	response := ErrorResponse{

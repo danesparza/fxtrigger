@@ -4,28 +4,28 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	data2 "github.com/danesparza/fxtrigger/internal/data"
+	"github.com/danesparza/fxtrigger/internal/triggertype"
 	"log"
 	"net/http"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/danesparza/fxtrigger/data"
 	"github.com/danesparza/fxtrigger/event"
-	"github.com/danesparza/fxtrigger/triggertype"
 	"github.com/danesparza/go-rpio"
 )
 
 // BackgroundProcess encapsulates background processing operations
 type BackgroundProcess struct {
-	DB         *data.Manager
+	DB         *data2.Manager
 	HistoryTTL time.Duration
 
 	// FireTrigger signals a trigger should be fired
-	FireTrigger chan data.Trigger
+	FireTrigger chan data2.Trigger
 
 	// AddMonitor signals a trigger should be added to the list of monitored triggers
-	AddMonitor chan data.Trigger
+	AddMonitor chan data2.Trigger
 
 	// RemoveMonitor signals a trigger id should not be monitored anymore
 	RemoveMonitor chan string
@@ -45,7 +45,7 @@ func (bp BackgroundProcess) HandleAndProcess(systemctx context.Context) {
 		case trigReq := <-bp.FireTrigger:
 			//	As we get a request on a channel to fire a trigger...
 			//	Create a goroutine
-			go func(cx context.Context, trigger data.Trigger) {
+			go func(cx context.Context, trigger data2.Trigger) {
 
 				//	Loop through the associated webhooks
 				for _, hook := range trigger.WebHooks {
@@ -85,6 +85,7 @@ func (bp BackgroundProcess) HandleAndProcess(systemctx context.Context) {
 }
 
 // ListenForEvents listens to channel events to add / remove monitors
+//
 //	and 'fires' triggers when an event (motion / button press / time) occurs from a monitor
 func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 
@@ -100,7 +101,7 @@ func (bp BackgroundProcess) ListenForEvents(systemctx context.Context) {
 			//	or when enabling a trigger (that was previously disabled)
 
 			//	If you need to add a monitor, spin up a background goroutine to monitor that pin
-			go func(cx context.Context, req data.Trigger) {
+			go func(cx context.Context, req data2.Trigger) {
 
 				//	Create a cancelable context from the passed (system) context
 				ctx, cancel := context.WithCancel(cx)

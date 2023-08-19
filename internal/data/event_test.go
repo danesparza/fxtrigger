@@ -1,13 +1,13 @@
 package data_test
 
 import (
+	data2 "github.com/danesparza/fxtrigger/internal/data"
+	"github.com/danesparza/fxtrigger/internal/triggertype"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/danesparza/fxtrigger/data"
 	"github.com/danesparza/fxtrigger/event"
-	"github.com/danesparza/fxtrigger/triggertype"
 )
 
 func TestEvent_AddEvent_ValidEvent_Successful(t *testing.T) {
@@ -15,7 +15,7 @@ func TestEvent_AddEvent_ValidEvent_Successful(t *testing.T) {
 	//	Arrange
 	systemdb := getTestFiles()
 
-	db, err := data.NewManager(systemdb)
+	db, err := data2.NewManager(systemdb)
 	if err != nil {
 		t.Fatalf("NewManager failed: %s", err)
 	}
@@ -24,7 +24,7 @@ func TestEvent_AddEvent_ValidEvent_Successful(t *testing.T) {
 		os.RemoveAll(systemdb)
 	}()
 
-	testEvent := data.Event{EventType: event.SystemStartup, TriggerType: triggertype.Unknown, Details: "Unit test details"}
+	testEvent := data2.Event{EventType: event.SystemStartup, TriggerType: triggertype.Unknown, Details: "Unit test details"}
 
 	//	Act
 	newEvent, err := db.AddEvent(testEvent.EventType, testEvent.TriggerType, testEvent.Details, "127.0.0.1", 2*time.Hour)
@@ -45,7 +45,7 @@ func TestEvent_GetEvent_ValidEvent_Successful(t *testing.T) {
 	//	Arrange
 	systemdb := getTestFiles()
 
-	db, err := data.NewManager(systemdb)
+	db, err := data2.NewManager(systemdb)
 	if err != nil {
 		t.Fatalf("NewManager failed: %s", err)
 	}
@@ -54,7 +54,7 @@ func TestEvent_GetEvent_ValidEvent_Successful(t *testing.T) {
 		os.RemoveAll(systemdb)
 	}()
 
-	testEvent := data.Event{EventType: event.SystemStartup, TriggerType: triggertype.Unknown, Details: "Unit test details"}
+	testEvent := data2.Event{EventType: event.SystemStartup, TriggerType: triggertype.Unknown, Details: "Unit test details"}
 
 	//	Act
 	newEvent, _ := db.AddEvent(testEvent.EventType, testEvent.TriggerType, testEvent.Details, "127.0.0.1", 2*time.Hour)
@@ -80,7 +80,7 @@ func TestEvent_GetEvent_ExpiredEvent_ReturnsError(t *testing.T) {
 	//	Arrange
 	systemdb := getTestFiles()
 
-	db, err := data.NewManager(systemdb)
+	db, err := data2.NewManager(systemdb)
 	if err != nil {
 		t.Fatalf("NewManager failed: %s", err)
 	}
@@ -89,7 +89,7 @@ func TestEvent_GetEvent_ExpiredEvent_ReturnsError(t *testing.T) {
 		os.RemoveAll(systemdb)
 	}()
 
-	testEvent := data.Event{EventType: event.SystemStartup, TriggerType: triggertype.Unknown, Details: "Unit test details"}
+	testEvent := data2.Event{EventType: event.SystemStartup, TriggerType: triggertype.Unknown, Details: "Unit test details"}
 
 	//	Act
 	newEvent, _ := db.AddEvent(testEvent.EventType, testEvent.TriggerType, testEvent.Details, "127.0.0.1", 2*time.Second)
@@ -111,7 +111,7 @@ func TestEvent_GetAllEvents_ValidEvents_Successful(t *testing.T) {
 	//	Arrange
 	systemdb := getTestFiles()
 
-	db, err := data.NewManager(systemdb)
+	db, err := data2.NewManager(systemdb)
 	if err != nil {
 		t.Fatalf("NewManager failed: %s", err)
 	}
@@ -120,9 +120,9 @@ func TestEvent_GetAllEvents_ValidEvents_Successful(t *testing.T) {
 		os.RemoveAll(systemdb)
 	}()
 
-	testEvent1 := data.Event{EventType: event.SystemStartup, TriggerType: triggertype.Motion, Details: "Unit test 1 details"}
-	testEvent2 := data.Event{EventType: event.SystemStartup, TriggerType: triggertype.Time, Details: "Unit test 2 details"}
-	testEvent3 := data.Event{EventType: event.SystemStartup, TriggerType: triggertype.Motion, Details: "Unit test 3 details"}
+	testEvent1 := data2.Event{EventType: event.SystemStartup, TriggerType: triggertype.Motion, Details: "Unit test 1 details"}
+	testEvent2 := data2.Event{EventType: event.SystemStartup, TriggerType: triggertype.Time, Details: "Unit test 2 details"}
+	testEvent3 := data2.Event{EventType: event.SystemStartup, TriggerType: triggertype.Motion, Details: "Unit test 3 details"}
 
 	//	Act
 	db.AddEvent(testEvent1.EventType, testEvent1.TriggerType, testEvent1.Details, "127.0.0.1", 2*time.Hour)

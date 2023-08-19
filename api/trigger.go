@@ -3,11 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/danesparza/fxtrigger/internal/triggertype"
 	"net/http"
 	"strings"
 
 	"github.com/danesparza/fxtrigger/event"
-	"github.com/danesparza/fxtrigger/triggertype"
 	"github.com/gorilla/mux"
 )
 
