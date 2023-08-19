@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"github.com/danesparza/fxtrigger/internal/data"
 	"github.com/danesparza/fxtrigger/internal/trigger"
 	"github.com/rs/zerolog/log"
@@ -54,7 +55,7 @@ func start(cmd *cobra.Command, args []string) {
 	//	Create a DBManager object and associate with the api.Service
 	db, err := data.NewManager(systemdb)
 	if err != nil {
-		log.Printf("[ERROR] Error trying to open the system database: %s", err)
+		log.Err(err).Msg("Problem trying to open the system database")
 		return
 	}
 	defer db.Close()
@@ -88,25 +89,6 @@ func start(cmd *cobra.Command, args []string) {
 	//	Create a router and setup our REST endpoints...
 	restRouter := mux.NewRouter()
 
-	//	UI ROUTES
-	if viper.GetString("server.ui-dir") == "" {
-		//	Use the static assets file generated with
-		//	https://github.com/elazarl/go-bindata-assetfs using the application-monitor-ui from
-		//	https://github.com/danesparza/application-monitor-ui.
-		//
-		//	To generate this file, run `yarn build` under the "navajo-plex-ui" project.
-		//	Then rename the 'build' directory to 'ui', place that
-		//	directory under the main navajo-plex directory and run the commands:
-		//	go-bindata-assetfs -pkg cmd -o .\cmd\bindata.go ./ui/...
-		//	go install ./...
-
-		//  UIRouter.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(assetFS())))
-	} else {
-		//	Use the supplied directory:
-		log.Printf("[INFO] Using UI directory: %s\n", viper.GetString("server.ui-dir"))
-		restRouter.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir(viper.GetString("server.ui-dir")))))
-	}
-
 	//	TRIGGER ROUTES
 	restRouter.HandleFunc("/v1/triggers", apiService.CreateTrigger).Methods("POST")        // Create a trigger
 	restRouter.HandleFunc("/v1/triggers", apiService.UpdateTrigger).Methods("PUT")         // Update a trigger
@@ -128,7 +110,7 @@ func start(cmd *cobra.Command, args []string) {
 	backgroundService.InitializeMonitors()
 
 	//	Setup the CORS options:
-	log.Printf("[INFO] Allowed CORS origins: %s\n", viper.GetString("server.allowed-origins"))
+	log.Info().Str("CORS origins", viper.GetString("server.allowed-origins")).Msg("CORS config")
 
 	uiCorsRouter := cors.New(cors.Options{
 		AllowedOrigins:   strings.Split(viper.GetString("server.allowed-origins"), ","),
@@ -136,14 +118,11 @@ func start(cmd *cobra.Command, args []string) {
 	}).Handler(restRouter)
 
 	//	Format the bound interface:
-	formattedServerInterface := viper.GetString("server.bind")
-	if formattedServerInterface == "" {
-		formattedServerInterface = GetOutboundIP().String()
-	}
+	formattedServerPort := fmt.Sprintf(":%v", viper.GetString("server.port"))
 
 	//	Start the service and display how to access it
-	log.Printf("[INFO] REST service documentation: http://%s:%s/v1/swagger/\n", formattedServerInterface, viper.GetString("server.port"))
-	log.Printf("[ERROR] %v\n", http.ListenAndServe(viper.GetString("server.bind")+":"+viper.GetString("server.port"), uiCorsRouter))
+	log.Info().Str("server", formattedServerPort).Msg("Started REST service")
+	log.Err(http.ListenAndServe(formattedServerPort, uiCorsRouter)).Msg("HTTP API service error")
 }
 
 func handleSignals(ctx context.Context, sigs <-chan os.Signal, cancel context.CancelFunc) {

@@ -2,12 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"log"
-	"net"
 	"os"
 	"path"
 
-	"github.com/hashicorp/logutils"
 	"github.com/spf13/cobra"
 
 	"github.com/mitchellh/go-homedir"
@@ -44,7 +41,6 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/fxtrigger.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&loglevel, "loglevel", "l", "INFO", "Log level: DEBUG/INFO/WARN/ERROR")
 
 	//	Bind config flags for optional config file override:
 	viper.BindPFlag("loglevel", rootCmd.PersistentFlags().Lookup("loglevel"))
@@ -71,7 +67,6 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	//	Set our defaults
-	viper.SetDefault("loglevel", "INFO")
 	viper.SetDefault("datastore.system", path.Join(home, "fxtrigger", "db", "system.db"))
 	viper.SetDefault("datastore.retentiondays", 30)
 	viper.SetDefault("trigger.dndschedule", false) //	Use a 'Do not disturb' schedule
@@ -84,25 +79,4 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		problemWithConfigFile = true
 	}
-
-	//	Set the log level from config (if we have it)
-	filter := &logutils.LevelFilter{
-		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERROR"},
-		MinLevel: logutils.LogLevel(viper.GetString("loglevel")),
-		Writer:   os.Stderr,
-	}
-	log.SetOutput(filter)
-}
-
-// GetOutboundIP gets the preferred outbound ip of this machine
-func GetOutboundIP() net.IP {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-
-	return localAddr.IP
 }
