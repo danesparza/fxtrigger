@@ -1,4 +1,4 @@
-# fxtrigger [![CircleCI](https://circleci.com/gh/danesparza/fxtrigger.svg?style=shield)](https://circleci.com/gh/danesparza/fxtrigger)
+# fxtrigger [![Build and release](https://github.com/danesparza/fxtrigger/actions/workflows/release.yaml/badge.svg)](https://github.com/danesparza/fxtrigger/actions/workflows/release.yaml)
 REST service for Raspberry Pi GPIO/Sensor -> webhooks.  Made with ❤️ for makers, DIY craftsmen, prop makers and professional soundstage designers everywhere
 
 ## Prerequisites
