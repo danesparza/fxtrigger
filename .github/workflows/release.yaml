@@ -108,29 +108,10 @@ jobs:
           name: Release binaries
           path: /tmp/binaries
 
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/package.key
-          chmod 600 ~/.ssh/package.key
-          cat >>~/.ssh/config <<END
-          Host packagehost
-            Hostname ${{ secrets.SSH_HOST }}
-            User ${{ secrets.SSH_USER }}
-            IdentityFile ~/.ssh/package.key
-            StrictHostKeyChecking no
-          END
-          eval $(ssh-agent -s)
-          ssh-add ~/.ssh/package.key
+      - name: Get package pusher
+        run: go install github.com/danesparza/package-pusher@latest
 
-      - name: Package pre-refresh step
-        run: ssh packagehost /home/packagerepo/work/package-repo/ci-pre.sh
+      - name: Push artifact
+        run: export PATH=${PATH}:`go env GOPATH`/bin; package-pusher -file /tmp/binaries/${DEBIAN_PACKAGE_NAME}.deb -token ${{secrets.PACKASSIST_AUTH_TOKEN}}
 
-      - name: Copy artifact
-        run: scp /tmp/binaries/${DEBIAN_PACKAGE_NAME}.deb packagehost:/home/packagerepo/work/package-repo
 
-      - name: Refresh packages
-        run: ssh -tt packagehost /home/packagerepo/work/package-repo/ci-refresh.sh
-
-      - name: Package publish
-        run: ssh packagehost /home/packagerepo/work/package-repo/ci-post.sh
