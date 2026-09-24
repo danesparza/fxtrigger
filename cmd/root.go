@@ -67,6 +67,9 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	//	Set our defaults
+	viper.SetDefault("discovery.enabled", true)
+	viper.SetDefault("discovery.name", "")
+	viper.SetDefault("discovery.id", "")
 	viper.SetDefault("datastore.system", path.Join(home, "fxtrigger", "db", "system.db"))
 	viper.SetDefault("datastore.retentiondays", 30)
 	viper.SetDefault("trigger.dndschedule", false) //	Use a 'Do not disturb' schedule
