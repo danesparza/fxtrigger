@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25.x'
           check-latest: true
@@ -36,10 +36,10 @@ jobs:
     container: golang:latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25.x'
 
@@ -57,10 +57,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25.x'
 
@@ -89,7 +89,7 @@ jobs:
         run: mkdir -p "/tmp/packagestage/${DEBIAN_PACKAGE_NAME}/usr/bin"; cp "/tmp/binaries/fxtrigger_linux_arm" "/tmp/packagestage/${DEBIAN_PACKAGE_NAME}/usr/bin/fxtrigger"; cd /tmp/packagestage; dpkg-deb -Zxz --build "${DEBIAN_PACKAGE_NAME}"; mv *.deb "/tmp/binaries";
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Release binaries
           path: /tmp/binaries
@@ -98,12 +98,13 @@ jobs:
     name: Publish debian package
     runs-on: ubuntu-latest
     needs:
+      - vulnerabilitycheck
       - test
       - build
 
     steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: Release binaries
           path: /tmp/binaries
